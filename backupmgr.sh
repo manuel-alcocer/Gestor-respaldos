@@ -57,7 +57,7 @@ function checkConfig(){
     fi
 }
 
-function rsyncCompleteFile(){
+function fullRsyncFile(){
     # 1: usuario, 2:ip, 3:linea-completa, 4:destino local
     if [[ ! -d $4 ]]; then
         mkdir -p $4
@@ -80,14 +80,14 @@ function genExcludes(){
         excludeVals=${1#*:E:}
         SAVEIFS=$IFS
         IFS=:
-        for field in $excludeVals; do
+        for field in ${excludeVals}; do
             EXCLUDE+=("--exclude ${field}")
         done
         IFS=$SAVEIFS
     fi
 }
 
-function rsyncCompleteDir(){
+function fullRsyncDir(){
     # 1: usuario, 2:ip, 3:linea-completa, 4:destino local
     if [[ ! -d $4 ]]; then
         mkdir -p $4
@@ -104,7 +104,7 @@ function rsyncCompleteDir(){
     esac
 }
 
-function completeRsync(){
+function fullRsync(){
     aliasHost=$(cut -d':' -f1 <<< $1)
     hostFile="${REMOTE_HOSTS_DIR}/${aliasHost}"
     remoteUser=$(cut -d':' -f2 <<< $1)
@@ -115,21 +115,90 @@ function completeRsync(){
             objectType=$(cut -d':' -f1 <<< ${linea})
             case ${objectType,,} in
                 f)
-                    rsyncCompleteFile ${remoteUser} ${hostIP} ${linea} ${targetDir}
+                    fullRsyncFile ${remoteUser} ${hostIP} ${linea} ${targetDir}
                     ;;
                 d)
-                    rsyncCompleteDir ${remoteUser} ${hostIP} ${linea} ${targetDir}
+                    fullRsyncDir ${remoteUser} ${hostIP} ${linea} ${targetDir}
                     ;;
             esac
         fi
     done < $hostFile
 }
 
-function completeBackup(){
+function fullBackup(){
     getRemoteHost
     currentDate=$(date +%y%m%d%H%M)
     for remoteHost in "${REMOTE_HOSTS[@]}"; do
-        completeRsync "${remoteHost}" "${currentDate}"
+        fullRsync "${remoteHost}" "${currentDate}"
+    done
+}
+
+function incrRsyncFile(){
+    # 1: usuario, 2:ip, 3:linea-completa, 4:destino local para comparar, 5:destino backup
+    if [[ ! -d $4 ]]; then
+        mkdir -p $4
+    fi
+    BCKPFILE=$(cut -d':' -f3 <<< $3)
+    case ${2,,} in
+        localhost)
+            rsync -ab --backup-dir=$5 --relative ${BCKPFILE} $4
+            ;;
+        *)
+            rsync -ab --backup-dir=$5 --relative ${1}@${2}:${BCKPFILE} $4
+            ;;
+    esac
+}
+
+function incrRsyncDir(){
+    # 1: usuario, 2:ip, 3:linea-completa, 4:destino local para comparar, 5:destino backup
+    if [[ ! -d $4 ]]; then
+        mkdir -p $4
+    fi
+    BCKPDIR=$(cut -d':' -f3 <<< $3)
+    genExcludes $3
+    case ${2,,} in
+        localhost)
+            rsync -ab ${EXCLUDE} --backup-dir=$5 --relative ${BCKPDIR} $4
+            ;;
+        *)
+            rsync -ab ${EXCLUDE} --backup-dir=$5 --relative ${1}@${2}:${BCKPDIR} $4
+            ;;
+    esac
+}
+
+function lastFullRsync(){
+    baseDir="${BASE_STOR}/${1}/fullSync"
+    lastDir="$(ls -t ${baseDir} | head -n1)"
+    printf "${lastDir}\n"
+}
+
+function incrRsync(){
+    aliasHost=$(cut -d':' -f1 <<< $1)
+    hostFile="${REMOTE_HOSTS_DIR}/${aliasHost}"
+    remoteUser=$(cut -d':' -f2 <<< $1)
+    hostIP=$(cut -d':' -f3 <<< $1)
+    backupDir="${BASE_STOR}/${aliasHost}/incrSync/${2}"
+    targetDir="${BASE_STOR}/${aliasHost}/fullSync/$(lastFullRsync ${aliasHost})"
+    while IFS= read -r linea; do
+        if [[ ! ${linea} =~ ^[[:space:]]*#.* ]]; then
+            objectType=$(cut -d':' -f1 <<< ${linea})
+            case ${objectType,,} in
+                f)
+                    incrRsyncFile ${remoteUser} ${hostIP} ${linea} ${targetDir} ${backupDir}
+                    ;;
+                d)
+                    incrRsyncDir ${remoteUser} ${hostIP} ${linea} ${targetDir} ${backupDir}
+                    ;;
+            esac
+        fi
+    done < $hostFile
+}
+
+function incrementalBackup(){
+    getRemoteHost
+    currentDate=$(date +%y-%W-%m%d%H%M)
+    for remoteHost in "${REMOTE_HOSTS[@]}"; do
+        incrRsync "${remoteHost}" "${currentDate}"
     done
 }
 
@@ -137,9 +206,14 @@ function main(){
     # comprobar ficheros necesarios
     checkConfig
     # Obtener IPS de equipos remotos
-    if [[ ${COMMAND,,} == 'completa' ]]; then
-        completeBackup
-    fi
+    case ${COMMAND,,} in
+        full)
+            fullBackup
+            ;;
+        incr)
+            incrementalBackup
+            ;;
+    esac
 }
 
 [[ $OPTIONS = '-d' ]] && set -x
