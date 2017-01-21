@@ -150,18 +150,14 @@ function rsyncObjects(){
             rsyncOPTS="-a ${EXCLUDE} --relative"
             ;;
     esac
-
     if [[ ! -d $5 ]]; then
         mkdir -p $5
     fi
-
     BCKPOBJ=$(cut -d':' -f3 <<< $4)
-
     # Si la IP es localhost, el respaldo es local
     if [[ ${3,,} != 'localhost' ]]; then
         BCKPOBJ="${2}@${3}:${BCKPOBJ}"
     fi
-
     # Ejecución del respaldo
     rsync ${rsyncOPTS} ${BCKPOBJ} $5
 }
@@ -171,16 +167,12 @@ function incrRsyncDir(){
     if [[ ! -d $5 ]]; then
         mkdir -p $5
     fi
-
     BCKPOBJ=$(cut -d':' -f3 <<< $4)
-    
     genExcludes $4
-    
     # Si la IP es localhost, el respaldo es local
     if [[ ${3,,} != 'localhost' ]]; then
         BCKPOBJ="${2}@${3}:${BCKPOBJ}"
     fi
-
     case ${3,,} in
         localhost)
             rsync -ab --checksum ${EXCLUDE} --delete --backup-dir=$6 --relative ${BCKPOBJ} $5
