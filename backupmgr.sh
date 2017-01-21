@@ -187,7 +187,7 @@ function fullRsync(){
 # ######################################
 function fullBackup(){
     getRemoteHost
-    currentDate=$(date +%y%m%d%H%M)
+    currentDate=$(date +%y-%U-%m%d%H%M)
     for remoteHost in "${REMOTE_HOSTS[@]}"; do
         createVars "${remoteHost}" "${currentDate}" full
         #fullRsync "${remoteHost}" "${currentDate}"
@@ -266,7 +266,7 @@ function incrRsync(){
 # ##########################################
 function incrementalBackup(){
     getRemoteHost
-    currentDate=$(date +%y-%W-%m%d%H%M)
+    currentDate=$(date +%y-%U-%m%d%H%M)
     for remoteHost in "${REMOTE_HOSTS[@]}"; do
         incrRsync "${remoteHost}" "${currentDate}"
     done
