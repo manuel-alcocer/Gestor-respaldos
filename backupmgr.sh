@@ -258,7 +258,7 @@ function incrRsync(){
         fi
     done < $HOSTFILENAME
     if [[ ${OPTIONS} == '--secondary-stor' ]]; then
-        uploadBackupDir ${BACKUPDIR} incr/
+        uploadBackupDir ${BACKUPDIR} incr
     fi
 }
 
