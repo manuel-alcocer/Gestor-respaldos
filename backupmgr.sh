@@ -29,6 +29,7 @@ REMOTE_HOSTS_FILE="${BACKUPMGR_CONFIG_DIR}${REMOTE_HOSTS_FILE:-/hosts.list}"
 REMOTE_HOSTS_DIR="${BACKUPMGR_CONFIG_DIR}${REMOTE_HOSTS_DIR:-/hosts.list.d}"
 
 # Lista de hosts de almacenamiento secundarios
+# Se admiten varios destinos
 # formato:
 # alias:usuario:ip:/ruta-absoluta
 # ejemplo:
@@ -63,10 +64,48 @@ function checkConfig(){
         printf "No existe la ruta de almacenamiento local ${BASE_STOR}\n"
         exitWithErr
     fi
+    if [[ ! -f ${SECONDARY_HOSTS_FILE} ]]; then
+        printf "No existe el fichero de almacenamiento secundario ${SECONDARY_HOSTS_FILE}\n"
+        exitWithErr
+    fi
 }
 
-# ZONA DE RESPALDOS COMPLETOS
+# Generar lista de exclusiones
+function genExcludes(){
+    EXCLUDE=()
+    excludeVal=$(cut -d':' -f4 <<< $1)
+    if [[ ${excludeVal^^} == 'E' ]]; then
+        excludeVals=${1#*:E:}
+        SAVEIFS=$IFS
+        IFS=:
+        for field in ${excludeVals}; do
+            EXCLUDE+=("--exclude ${field}")
+        done
+        IFS=$SAVEIFS
+    fi
+}
 
+# ############################################ #
+# ZONA DE SUBIDA A ALMACENAMIENTOS SECUNDARIOS #
+# ############################################ #
+function uploadBackupDir(){
+    temporaryTar=/tmp/${1##*/}-${2}.tar.gz
+    tar czf ${temporaryTar} ${1}
+    while IFS= read -r linea; do
+        rsyncToSecondary ${linea} $2 ${temporaryTar}
+    done < ${SECONDARY_HOSTS_FILE}
+}
+
+function rsyncToSecondary(){
+    secRemUser=$(cut -d':' -f2 <<< $1)
+    secRemHost=$(cut -d':' -f3 <<< $1)
+    secRemDir="$(cut -d':' -f4 <<< $1)/${2}"
+    rsync $3 ${secRemUser}@${secRemHost}:${secRemDir}
+}
+
+# ########################### #
+# ZONA DE RESPALDOS COMPLETOS
+# ########################### #
 function fullRsyncFile(){
     # 1: usuario, 2:ip, 3:linea-completa, 4:destino local
     if [[ ! -d $4 ]]; then
@@ -81,20 +120,6 @@ function fullRsyncFile(){
             rsync -a --relative ${1}@${2}:${BCKPFILE} $4
             ;;
     esac
-}
-
-function genExcludes(){
-    EXCLUDE=()
-    excludeVal=$(cut -d':' -f4 <<< $1)
-    if [[ ${excludeVal^^} == 'E' ]]; then
-        excludeVals=${1#*:E:}
-        SAVEIFS=$IFS
-        IFS=:
-        for field in ${excludeVals}; do
-            EXCLUDE+=("--exclude ${field}")
-        done
-        IFS=$SAVEIFS
-    fi
 }
 
 function fullRsyncDir(){
@@ -138,6 +163,8 @@ function fullRsync(){
     fi
 }
 
+# Función principal de backups completos
+# ######################################
 function fullBackup(){
     getRemoteHost
     currentDate=$(date +%y%m%d%H%M)
@@ -146,6 +173,9 @@ function fullBackup(){
     done
 }
 
+# ############################# #
+# ZONA DE BACKUPS INCREMENTALES #
+# ############################# #
 function incrRsyncFile(){
     # 1: usuario, 2:ip, 3:linea-completa, 4:destino local para comparar, 5:destino backup
     if [[ ! -d $4 ]]; then
@@ -210,6 +240,8 @@ function incrRsync(){
     fi
 }
 
+# Función principal de backups incrementales
+# ##########################################
 function incrementalBackup(){
     getRemoteHost
     currentDate=$(date +%y-%W-%m%d%H%M)
@@ -218,6 +250,9 @@ function incrementalBackup(){
     done
 }
 
+# ############################ #
+# FUNCIÓN DE LLAMADA PRINCIPAL #
+# ############################ #
 function main(){
     # comprobar ficheros necesarios
     checkConfig
@@ -232,6 +267,7 @@ function main(){
     esac
 }
 
+# Llamada principal
 [[ $LASTOPT == '-d' ]] && set -x
 main $OPTIONS
 [[ $LASTOPT == '-d' ]] && set +x
