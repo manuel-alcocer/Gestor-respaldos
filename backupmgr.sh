@@ -41,7 +41,7 @@ SECONDARY_HOSTS_FILE="${BACKUPMGR_CONFIG_DIR}${SECONDARY_HOSTS_FILE:-/secondary_
 # openssl genrsa -aes256 -out private_key.pem 4096
 # openssl rsa -in private_key.pem -out backupmgr.pubkey.pem -outform PEM -pubout
 
-OPENSSL_PUBKEY="{BACKUPMGR_CONFIG_DIR}${OPENSSL_PUBKEY:-/backupmgr.pubkey.pem}"
+OPENSSL_PUBKEY="${BACKUPMGR_CONFIG_DIR}${OPENSSL_PUBKEY:-/backupmgr.pubkey.pem}"
 
 
 # Captura de parámetros
