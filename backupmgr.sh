@@ -99,7 +99,7 @@ function uploadBackupDir(){
 function rsyncToSecondary(){
     secRemUser=$(cut -d':' -f2 <<< $1)
     secRemHost=$(cut -d':' -f3 <<< $1)
-    secRemDir="$(cut -d':' -f4 <<< $1)/${2}"
+    secRemDir="$(cut -d':' -f4 <<< $1)/${2}/"
     rsync $3 ${secRemUser}@${secRemHost}:${secRemDir}
 }
 
