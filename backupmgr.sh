@@ -96,10 +96,10 @@ function genExcludes(){
 # ZONA DE SUBIDA A ALMACENAMIENTOS SECUNDARIOS #
 # ############################################ #
 function uploadBackupDir(){
-    temporaryTar=/tmp/${1##*/}-${2}-${3}.tar.gz
-    tar czf ${temporaryTar} ${1}
+    temporaryTar=/tmp/${2##*/}-${1}-${3}.tar.gz
+    tar czf ${temporaryTar} ${2}
     while IFS= read -r linea; do
-        rsyncToSecondary ${linea} $2 $3 ${temporaryTar}
+        rsyncToSecondary ${linea} $1 $3 ${temporaryTar}
     done < ${SECONDARY_HOSTS_FILE}
 }
 
