@@ -43,6 +43,13 @@ OPTIONS=$2
 
 EXCLUDE=()
 
+ALIASHOST=''
+HOSTFILENAME=''
+REMOTEUSERNAME=''
+HOSTIP=''
+BACKUPDIR=''
+TARGETDIR=''
+
 function exitWithErr(){
     printf 'Hubieron errores...Saliendo\n'
     exit 1
@@ -139,27 +146,40 @@ function fullRsyncDir(){
     esac
 }
 
+function createVars(){
+    ALIASHOST=$(cut -d':' -f1 <<< $1)
+    HOSTFILENAME="${REMOTE_HOSTS_DIR}/${ALIASHOST}"
+    REMOTEUSERNAME=$(cut -d':' -f2 <<< $1)
+    HOSTIP=$(cut -d':' -f3 <<< $1)
+    BACKUPDIR="${BASE_STOR}/${ALIASHOST}/incrSync/${2}"
+    if [[ $3 == 'full' ]]; then
+        TARGETDIR="${BASE_STOR}/${ALIASHOST}/fullSync/${2}"
+    else
+        TARGETDIR="${BASE_STOR}/${ALIASHOST}/fullSync/$(lastFullRsync ${ALIASHOST})"
+    fi
+}
+
 function fullRsync(){
-    aliasHost=$(cut -d':' -f1 <<< $1)
-    hostFile="${REMOTE_HOSTS_DIR}/${aliasHost}"
-    remoteUser=$(cut -d':' -f2 <<< $1)
-    hostIP=$(cut -d':' -f3 <<< $1)
-    targetDir="${BASE_STOR}/${aliasHost}/fullSync/${2}"
+    #ALIASHOST=$(cut -d':' -f1 <<< $1)
+    #HOSTFILENAME="${REMOTE_HOSTS_DIR}/${ALIASHOST}"
+    #REMOTEUSERNAME=$(cut -d':' -f2 <<< $1)
+    #HOSTIP=$(cut -d':' -f3 <<< $1)
+    #TARGETDIR="${BASE_STOR}/${ALIASHOST}/fullSync/${2}"
     while IFS= read -r linea; do
         if [[ ! ${linea} =~ ^[[:space:]]*#.* ]]; then
             objectType=$(cut -d':' -f1 <<< ${linea})
             case ${objectType,,} in
                 f)
-                    fullRsyncFile ${remoteUser} ${hostIP} ${linea} ${targetDir}
+                    fullRsyncFile ${REMOTEUSERNAME} ${HOSTIP} ${linea} ${TARGETDIR}
                     ;;
                 d)
-                    fullRsyncDir ${remoteUser} ${hostIP} ${linea} ${targetDir}
+                    fullRsyncDir ${REMOTEUSERNAME} ${HOSTIP} ${linea} ${TARGETDIR}
                     ;;
             esac
         fi
-    done < $hostFile
+    done < $HOSTFILENAME
     if [[ ${OPTIONS} == '--secondary-stor' ]]; then
-        uploadBackupDir ${targetDir} full/
+        uploadBackupDir ${TARGETDIR} full/
     fi
 }
 
@@ -169,7 +189,9 @@ function fullBackup(){
     getRemoteHost
     currentDate=$(date +%y%m%d%H%M)
     for remoteHost in "${REMOTE_HOSTS[@]}"; do
-        fullRsync "${remoteHost}" "${currentDate}"
+        createVars "${remoteHost}" "${currentDate}" full
+        #fullRsync "${remoteHost}" "${currentDate}"
+        fullRsync
     done
 }
 
@@ -216,27 +238,27 @@ function lastFullRsync(){
 }
 
 function incrRsync(){
-    aliasHost=$(cut -d':' -f1 <<< $1)
-    hostFile="${REMOTE_HOSTS_DIR}/${aliasHost}"
-    remoteUser=$(cut -d':' -f2 <<< $1)
-    hostIP=$(cut -d':' -f3 <<< $1)
-    backupDir="${BASE_STOR}/${aliasHost}/incrSync/${2}"
-    targetDir="${BASE_STOR}/${aliasHost}/fullSync/$(lastFullRsync ${aliasHost})"
+    ALIASHOST=$(cut -d':' -f1 <<< $1)
+    HOSTFILENAME="${REMOTE_HOSTS_DIR}/${ALIASHOST}"
+    REMOTEUSERNAME=$(cut -d':' -f2 <<< $1)
+    HOSTIP=$(cut -d':' -f3 <<< $1)
+    BACKUPDIR="${BASE_STOR}/${ALIASHOST}/incrSync/${2}"
+    TARGETDIR="${BASE_STOR}/${ALIASHOST}/fullSync/$(lastFullRsync ${ALIASHOST})"
     while IFS= read -r linea; do
         if [[ ! ${linea} =~ ^[[:space:]]*#.* ]]; then
             objectType=$(cut -d':' -f1 <<< ${linea})
             case ${objectType,,} in
                 f)
-                    incrRsyncFile ${remoteUser} ${hostIP} ${linea} ${targetDir} ${backupDir}
+                    incrRsyncFile ${REMOTEUSERNAME} ${HOSTIP} ${linea} ${TARGETDIR} ${BACKUPDIR}
                     ;;
                 d)
-                    incrRsyncDir ${remoteUser} ${hostIP} ${linea} ${targetDir} ${backupDir}
+                    incrRsyncDir ${REMOTEUSERNAME} ${HOSTIP} ${linea} ${TARGETDIR} ${BACKUPDIR}
                     ;;
             esac
         fi
-    done < $hostFile
+    done < $HOSTFILENAME
     if [[ ${OPTIONS} == '--secondary-stor' ]]; then
-        uploadBackupDir ${backupDir} incr/
+        uploadBackupDir ${BACKUPDIR} incr/
     fi
 }
 
