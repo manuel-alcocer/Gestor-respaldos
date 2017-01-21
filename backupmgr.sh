@@ -34,7 +34,7 @@ REMOTE_HOSTS_DIR="${BACKUPMGR_CONFIG_DIR}${REMOTE_HOSTS_DIR:-/hosts.list.d}"
 # alias:usuario:ip:/ruta-absoluta
 # ejemplo:
 # saturno:malcocer:172.22.111.11:/Backup-ASO/malcocer
-SECONDARY_HOSTS_FILE="${BACKUPMGR_CONFIG_DIR}${REMOTE_HOSTS_FILE:-/secondary_hosts.list}"
+SECONDARY_HOSTS_FILE="${BACKUPMGR_CONFIG_DIR}${SECONDARY_HOSTS_FILE:-/secondary_hosts.list}"
 
 # Captura de parámetros
 COMMAND=$1
