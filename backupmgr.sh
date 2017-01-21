@@ -76,7 +76,7 @@ function genExcludes(){
     export EXCLUDE=()
     excludeVal=$(cut -d':' -f4 <<< $1)
     if [[ ${excludeVal^^} == 'E' ]]; then
-        excludeVals=${1#.*:E:}
+        excludeVals=${1#*:E:}
         SAVEIFS=$IFS
         IFS=:
         for field in $excludeVals; do
