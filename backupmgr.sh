@@ -135,7 +135,7 @@ function createVars(){
 }
 
 function rsyncObjects(){
-    # 1:tipo, 2: usuario, 3:ip, 4:linea-completa, 5:destino local, 6:destino backup
+    # 1:tipo, 2:linea-completa
     # Configuración de opciones para completa o incremental 
     case $1 in
         incrF)
@@ -171,11 +171,9 @@ function mainRsync(){
             objectType=$(cut -d':' -f1 <<< ${linea})
             case ${objectType,,} in
                 f)
-                    #rsyncObjects ${1}F ${REMOTEUSERNAME} ${HOSTIP} ${linea} ${TARGETDIR} ${BACKUPDIR}
                     rsyncObjects ${1}F ${linea}
                     ;;
                 d)
-                    #rsyncObjects ${1}D ${REMOTEUSERNAME} ${HOSTIP} ${linea} ${TARGETDIR} ${BACKUPDIR}
                     rsyncObjects ${1}D ${linea}
                     ;;
             esac
@@ -204,11 +202,9 @@ function main(){
     # Obtener IPS de equipos remotos
     case ${COMMAND,,} in
         full)
-            #fullBackup $OPTIONS
             makeBackup full
             ;;
         incr)
-            #incrementalBackup $OPTIONS
             makeBackup incr
             ;;
     esac
