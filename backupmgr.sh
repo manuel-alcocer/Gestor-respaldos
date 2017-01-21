@@ -256,7 +256,7 @@ function makeBackup(){
     getRemoteHost
     currentDate=$(date +%y-%U-%m%d-%H%M)
     for remoteHost in "${REMOTE_HOSTS[@]}"; do
-        createVars "${remoteHost}" "${currentDate}" incr
+        createVars "${remoteHost}" "${currentDate}" $1
         mainRsync $1
     done
 }
