@@ -88,7 +88,7 @@ function completeBackup(){
     echo "${REMOTE_HOSTS[@]}"
     currentDate=$(date +%y%m%d%H%M)
     for remoteHost in "${REMOTE_HOSTS}"; do
-        completeRsync ${remoteHost} ${currentDate}
+        completeRsync "${remoteHost}" "${currentDate}"
     done
 }
 
