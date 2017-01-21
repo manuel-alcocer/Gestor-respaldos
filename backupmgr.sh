@@ -110,42 +110,7 @@ function rsyncToSecondary(){
     rsync $3 ${secRemUser}@${secRemHost}:${secRemDir}
 }
 
-# ########################### #
-# ZONA DE RESPALDOS COMPLETOS
-# ########################### #
-function fullRsyncFile(){
-    # 1: usuario, 2:ip, 3:linea-completa, 4:destino local
-    if [[ ! -d $4 ]]; then
-        mkdir -p $4
-    fi
-    BCKPFILE=$(cut -d':' -f3 <<< $3)
-    case ${2,,} in
-        localhost)
-            rsync -a --relative ${BCKPFILE} $4
-            ;;
-        *)
-            rsync -a --relative ${1}@${2}:${BCKPFILE} $4
-            ;;
-    esac
-}
-
-function fullRsyncDir(){
-    # 1: usuario, 2:ip, 3:linea-completa, 4:destino local
-    if [[ ! -d $4 ]]; then
-        mkdir -p $4
-    fi
-    BCKPDIR=$(cut -d':' -f3 <<< $3)
-    genExcludes $3
-    case ${2,,} in
-        localhost)
-            rsync -a ${EXCLUDE} --relative ${BCKPDIR} $4
-            ;;
-        *)
-            rsync -a ${EXCLUDE} --relative ${1}@${2}:${BCKPDIR} $4
-            ;;
-    esac
-}
-
+# Creación de variables para rutas de respaldo y destino
 function createVars(){
     ALIASHOST=$(cut -d':' -f1 <<< $1)
     HOSTFILENAME="${REMOTE_HOSTS_DIR}/${ALIASHOST}"
@@ -159,18 +124,76 @@ function createVars(){
     fi
 }
 
+function rsyncFile(){
+    # 1:tipo, 2: usuario, 3:ip, 4:linea-completa, 5:destino local, 6:destino backup
+    
+    # Configuración de opciones para completa o incremental 
+    if [[ $1 == 'incr' ]]; then
+        rsyncOPTS="-ab --checksum --backup-dir=$6 --relative"
+    else
+        rsyncOPTS="-a --relative"
+    fi
+
+    if [[ ! -d $5 ]]; then
+        mkdir -p $5
+    fi
+
+    BCKPOBJ=$(cut -d':' -f3 <<< $4)
+
+    # Si la IP es localhost, el respaldo es local
+    if [[ ${3,,} != 'localhost' ]]; then
+        BCKPOBJ="${2}@${3}:${BCKPOBJ}"
+    fi
+
+    # Ejecución del respaldo
+    rsync ${rsyncOPTS} ${BCKPOBJ} $5
+}
+
+
+# ########################### #
+# ZONA DE RESPALDOS COMPLETOS
+# ########################### #
+function fullRsyncFile(){
+    # 1: usuario, 2:ip, 3:linea-completa, 4:destino local
+    if [[ ! -d $4 ]]; then
+        mkdir -p $4
+    fi
+    BCKPOBJ=$(cut -d':' -f3 <<< $3)
+    case ${2,,} in
+        localhost)
+            rsync -a --relative ${BCKPOBJ} $4
+            ;;
+        *)
+            rsync -a --relative ${1}@${2}:${BCKPOBJ} $4
+            ;;
+    esac
+}
+
+function fullRsyncDir(){
+    # 1: usuario, 2:ip, 3:linea-completa, 4:destino local
+    if [[ ! -d $4 ]]; then
+        mkdir -p $4
+    fi
+    BCKPOBJ=$(cut -d':' -f3 <<< $3)
+    genExcludes $3
+    case ${2,,} in
+        localhost)
+            rsync -a ${EXCLUDE} --relative ${BCKPOBJ} $4
+            ;;
+        *)
+            rsync -a ${EXCLUDE} --relative ${1}@${2}:${BCKPOBJ} $4
+            ;;
+    esac
+}
+
 function fullRsync(){
-    #ALIASHOST=$(cut -d':' -f1 <<< $1)
-    #HOSTFILENAME="${REMOTE_HOSTS_DIR}/${ALIASHOST}"
-    #REMOTEUSERNAME=$(cut -d':' -f2 <<< $1)
-    #HOSTIP=$(cut -d':' -f3 <<< $1)
-    #TARGETDIR="${BASE_STOR}/${ALIASHOST}/fullSync/${2}"
     while IFS= read -r linea; do
         if [[ ! ${linea} =~ ^[[:space:]]*#.* ]]; then
             objectType=$(cut -d':' -f1 <<< ${linea})
             case ${objectType,,} in
                 f)
-                    fullRsyncFile ${REMOTEUSERNAME} ${HOSTIP} ${linea} ${TARGETDIR}
+                    #fullRsyncFile ${REMOTEUSERNAME} ${HOSTIP} ${linea} ${TARGETDIR}
+                    rsyncFile full ${REMOTEUSERNAME} ${HOSTIP} ${linea} ${TARGETDIR}
                     ;;
                 d)
                     fullRsyncDir ${REMOTEUSERNAME} ${HOSTIP} ${linea} ${TARGETDIR}
@@ -190,7 +213,6 @@ function fullBackup(){
     currentDate=$(date +%y-%U-%m%d%H%M)
     for remoteHost in "${REMOTE_HOSTS[@]}"; do
         createVars "${remoteHost}" "${currentDate}" full
-        #fullRsync "${remoteHost}" "${currentDate}"
         fullRsync
     done
 }
@@ -203,13 +225,13 @@ function incrRsyncFile(){
     if [[ ! -d $4 ]]; then
         mkdir -p $4
     fi
-    BCKPFILE=$(cut -d':' -f3 <<< $3)
+    BCKPOBJ=$(cut -d':' -f3 <<< $3)
     case ${2,,} in
         localhost)
-            rsync -ab --checksum --backup-dir=$5 --relative ${BCKPFILE} $4
+            rsync -ab --checksum --backup-dir=$5 --relative ${BCKPOBJ} $4
             ;;
         *)
-            rsync -ab --checksum --backup-dir=$5 --relative ${1}@${2}:${BCKPFILE} $4
+            rsync -ab --checksum --backup-dir=$5 --relative ${1}@${2}:${BCKPOBJ} $4
             ;;
     esac
 }
@@ -219,14 +241,14 @@ function incrRsyncDir(){
     if [[ ! -d $4 ]]; then
         mkdir -p $4
     fi
-    BCKPDIR=$(cut -d':' -f3 <<< $3)
+    BCKPOBJ=$(cut -d':' -f3 <<< $3)
     genExcludes $3
     case ${2,,} in
         localhost)
-            rsync -ab --checksum ${EXCLUDE} --delete --backup-dir=$5 --relative ${BCKPDIR} $4
+            rsync -ab --checksum ${EXCLUDE} --delete --backup-dir=$5 --relative ${BCKPOBJ} $4
             ;;
         *)
-            rsync -ab --checksum ${EXCLUDE} --delete --backup-dir=$5 --relative ${1}@${2}:${BCKPDIR} $4
+            rsync -ab --checksum ${EXCLUDE} --delete --backup-dir=$5 --relative ${1}@${2}:${BCKPOBJ} $4
             ;;
     esac
 }
@@ -238,18 +260,13 @@ function lastFullRsync(){
 }
 
 function incrRsync(){
-    #ALIASHOST=$(cut -d':' -f1 <<< $1)
-    #HOSTFILENAME="${REMOTE_HOSTS_DIR}/${ALIASHOST}"
-    #REMOTEUSERNAME=$(cut -d':' -f2 <<< $1)
-    #HOSTIP=$(cut -d':' -f3 <<< $1)
-    #BACKUPDIR="${BASE_STOR}/${ALIASHOST}/incrSync/${2}"
-    #TARGETDIR="${BASE_STOR}/${ALIASHOST}/fullSync/$(lastFullRsync ${ALIASHOST})"
     while IFS= read -r linea; do
         if [[ ! ${linea} =~ ^[[:space:]]*#.* ]]; then
             objectType=$(cut -d':' -f1 <<< ${linea})
             case ${objectType,,} in
                 f)
-                    incrRsyncFile ${REMOTEUSERNAME} ${HOSTIP} ${linea} ${TARGETDIR} ${BACKUPDIR}
+                    #incrRsyncFile ${REMOTEUSERNAME} ${HOSTIP} ${linea} ${TARGETDIR} ${BACKUPDIR}
+                    rsyncFile incr ${REMOTEUSERNAME} ${HOSTIP} ${linea} ${TARGETDIR} ${BACKUPDIR}
                     ;;
                 d)
                     incrRsyncDir ${REMOTEUSERNAME} ${HOSTIP} ${linea} ${TARGETDIR} ${BACKUPDIR}
@@ -269,7 +286,6 @@ function incrementalBackup(){
     currentDate=$(date +%y-%U-%m%d%H%M)
     for remoteHost in "${REMOTE_HOSTS[@]}"; do
         createVars "${remoteHost}" "${currentDate}" incr
-        #incrRsync "${remoteHost}" "${currentDate}"
         incrRsync
     done
 }
