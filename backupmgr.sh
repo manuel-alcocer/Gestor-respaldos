@@ -238,12 +238,12 @@ function lastFullRsync(){
 }
 
 function incrRsync(){
-    ALIASHOST=$(cut -d':' -f1 <<< $1)
-    HOSTFILENAME="${REMOTE_HOSTS_DIR}/${ALIASHOST}"
-    REMOTEUSERNAME=$(cut -d':' -f2 <<< $1)
-    HOSTIP=$(cut -d':' -f3 <<< $1)
-    BACKUPDIR="${BASE_STOR}/${ALIASHOST}/incrSync/${2}"
-    TARGETDIR="${BASE_STOR}/${ALIASHOST}/fullSync/$(lastFullRsync ${ALIASHOST})"
+    #ALIASHOST=$(cut -d':' -f1 <<< $1)
+    #HOSTFILENAME="${REMOTE_HOSTS_DIR}/${ALIASHOST}"
+    #REMOTEUSERNAME=$(cut -d':' -f2 <<< $1)
+    #HOSTIP=$(cut -d':' -f3 <<< $1)
+    #BACKUPDIR="${BASE_STOR}/${ALIASHOST}/incrSync/${2}"
+    #TARGETDIR="${BASE_STOR}/${ALIASHOST}/fullSync/$(lastFullRsync ${ALIASHOST})"
     while IFS= read -r linea; do
         if [[ ! ${linea} =~ ^[[:space:]]*#.* ]]; then
             objectType=$(cut -d':' -f1 <<< ${linea})
@@ -268,7 +268,9 @@ function incrementalBackup(){
     getRemoteHost
     currentDate=$(date +%y-%U-%m%d%H%M)
     for remoteHost in "${REMOTE_HOSTS[@]}"; do
-        incrRsync "${remoteHost}" "${currentDate}"
+        createVars "${remoteHost}" "${currentDate}" incr
+        #incrRsync "${remoteHost}" "${currentDate}"
+        incrRsync
     done
 }
 
