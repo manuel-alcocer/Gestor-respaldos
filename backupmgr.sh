@@ -100,5 +100,6 @@ function main(){
         completeBackup
     fi
 }
-
+set -x
 main
+set +x
