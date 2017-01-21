@@ -110,6 +110,12 @@ function rsyncToSecondary(){
     rsync $3 ${secRemUser}@${secRemHost}:${secRemDir}
 }
 
+function lastFullRsync(){
+    baseDir="${BASE_STOR}/${1}/fullSync"
+    lastDir="$(ls -t ${baseDir} | head -n1)"
+    printf "${lastDir}\n"
+}
+
 # Creación de variables para rutas de respaldo y destino
 function createVars(){
     ALIASHOST=$(cut -d':' -f1 <<< $1)
@@ -124,15 +130,26 @@ function createVars(){
     fi
 }
 
-function rsyncFile(){
+function rsyncObjects(){
     # 1:tipo, 2: usuario, 3:ip, 4:linea-completa, 5:destino local, 6:destino backup
     
     # Configuración de opciones para completa o incremental 
-    if [[ $1 == 'incr' ]]; then
-        rsyncOPTS="-ab --checksum --backup-dir=$6 --relative"
-    else
-        rsyncOPTS="-a --relative"
-    fi
+    case $1 in
+        incrF)
+            rsyncOPTS="-ab --checksum --backup-dir=$6 --relative"
+            ;;
+        fullF)
+            rsyncOPTS="-a --relative"
+            ;;
+        incrD)
+            genExcludes $4
+            rsyncOPTS="-ab --checksum ${EXCLUDE} --delete --backup-dir=$6 --relative"
+            ;;
+        fullD)
+            genExcludes $4
+            rsyncOPTS="-a ${EXCLUDE} --relative"
+            ;;
+    esac
 
     if [[ ! -d $5 ]]; then
         mkdir -p $5
@@ -149,9 +166,34 @@ function rsyncFile(){
     rsync ${rsyncOPTS} ${BCKPOBJ} $5
 }
 
+function incrRsyncDir(){
+    # 1:tipo, 2: usuario, 3:ip, 4:linea-completa, 5:destino local para comparar, 6:destino backup
+    if [[ ! -d $5 ]]; then
+        mkdir -p $5
+    fi
+
+    BCKPOBJ=$(cut -d':' -f3 <<< $4)
+    
+    genExcludes $4
+    
+    # Si la IP es localhost, el respaldo es local
+    if [[ ${3,,} != 'localhost' ]]; then
+        BCKPOBJ="${2}@${3}:${BCKPOBJ}"
+    fi
+
+    case ${3,,} in
+        localhost)
+            rsync -ab --checksum ${EXCLUDE} --delete --backup-dir=$6 --relative ${BCKPOBJ} $5
+            ;;
+        *)
+            rsync -ab --checksum ${EXCLUDE} --delete --backup-dir=$6 --relative ${2}@${3}:${BCKPOBJ} $5
+            ;;
+    esac
+}
+
 
 # ########################### #
-# ZONA DE RESPALDOS COMPLETOS
+# ZONA DE RESPALDOS COMPLETOS #
 # ########################### #
 function fullRsyncFile(){
     # 1: usuario, 2:ip, 3:linea-completa, 4:destino local
@@ -193,10 +235,11 @@ function fullRsync(){
             case ${objectType,,} in
                 f)
                     #fullRsyncFile ${REMOTEUSERNAME} ${HOSTIP} ${linea} ${TARGETDIR}
-                    rsyncFile full ${REMOTEUSERNAME} ${HOSTIP} ${linea} ${TARGETDIR}
+                    rsyncObjects fullF ${REMOTEUSERNAME} ${HOSTIP} ${linea} ${TARGETDIR}
                     ;;
                 d)
-                    fullRsyncDir ${REMOTEUSERNAME} ${HOSTIP} ${linea} ${TARGETDIR}
+                    #fullRsyncDir ${REMOTEUSERNAME} ${HOSTIP} ${linea} ${TARGETDIR}
+                    rsyncObjects fullD ${REMOTEUSERNAME} ${HOSTIP} ${linea} ${TARGETDIR}
                     ;;
             esac
         fi
@@ -210,7 +253,7 @@ function fullRsync(){
 # ######################################
 function fullBackup(){
     getRemoteHost
-    currentDate=$(date +%y-%U-%m%d%H%M)
+    currentDate=$(date +%y-%U-%m%d-%H%M)
     for remoteHost in "${REMOTE_HOSTS[@]}"; do
         createVars "${remoteHost}" "${currentDate}" full
         fullRsync
@@ -253,12 +296,6 @@ function incrRsyncDir(){
     esac
 }
 
-function lastFullRsync(){
-    baseDir="${BASE_STOR}/${1}/fullSync"
-    lastDir="$(ls -t ${baseDir} | head -n1)"
-    printf "${lastDir}\n"
-}
-
 function incrRsync(){
     while IFS= read -r linea; do
         if [[ ! ${linea} =~ ^[[:space:]]*#.* ]]; then
@@ -266,10 +303,11 @@ function incrRsync(){
             case ${objectType,,} in
                 f)
                     #incrRsyncFile ${REMOTEUSERNAME} ${HOSTIP} ${linea} ${TARGETDIR} ${BACKUPDIR}
-                    rsyncFile incr ${REMOTEUSERNAME} ${HOSTIP} ${linea} ${TARGETDIR} ${BACKUPDIR}
+                    rsyncObjects incrF ${REMOTEUSERNAME} ${HOSTIP} ${linea} ${TARGETDIR} ${BACKUPDIR}
                     ;;
                 d)
-                    incrRsyncDir ${REMOTEUSERNAME} ${HOSTIP} ${linea} ${TARGETDIR} ${BACKUPDIR}
+                    #incrRsyncDir ${REMOTEUSERNAME} ${HOSTIP} ${linea} ${TARGETDIR} ${BACKUPDIR}
+                    rsyncObjects incrD ${REMOTEUSERNAME} ${HOSTIP} ${linea} ${TARGETDIR} ${BACKUPDIR}
                     ;;
             esac
         fi
@@ -283,7 +321,7 @@ function incrRsync(){
 # ##########################################
 function incrementalBackup(){
     getRemoteHost
-    currentDate=$(date +%y-%U-%m%d%H%M)
+    currentDate=$(date +%y-%U-%m%d-%H%M)
     for remoteHost in "${REMOTE_HOSTS[@]}"; do
         createVars "${remoteHost}" "${currentDate}" incr
         incrRsync
