@@ -179,7 +179,7 @@ function fullRsync(){
         fi
     done < $HOSTFILENAME
     if [[ ${OPTIONS} == '--secondary-stor' ]]; then
-        uploadBackupDir ${TARGETDIR} full/
+        uploadBackupDir ${TARGETDIR} full
     fi
 }
 
