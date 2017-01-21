@@ -176,7 +176,7 @@ function mainRsync(){
             rsyncObjects ${1}${objectType^^} ${linea}
             unset storSecurity
             storSecurity=$(cut -d':' -f2 <<< ${linea})
-            if [[ ${storSecurity^^} == 'NC' ]]; then
+            if [[ ${storSecurity^^} == 'C' ]]; then
                 encryptObject ${linea}
             fi
         fi
