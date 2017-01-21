@@ -36,3 +36,5 @@ function main(){
         :
     fi
 }
+
+main
