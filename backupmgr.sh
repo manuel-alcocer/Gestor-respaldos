@@ -80,7 +80,7 @@ function completeRsync(){
                     ;;
             esac
         fi
-    done
+    done < $hostFile
 }
 
 function completeBackup(){
