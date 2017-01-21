@@ -174,6 +174,7 @@ function mainRsync(){
         if [[ ! ${linea} =~ ^[[:space:]]*#.* ]]; then
             objectType=$(cut -d':' -f1 <<< ${linea})
             rsyncObjects ${1}${objectType^^} ${linea}
+            unset storSecurity
             storSecurity=$(cut -d':' -f2 <<< ${linea})
             if [[ ${storSecurity^^} == 'NC' ]]; then
                 encryptObject ${linea}
