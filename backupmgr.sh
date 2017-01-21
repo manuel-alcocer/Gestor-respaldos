@@ -159,7 +159,7 @@ function fullRsync(){
         fi
     done < $hostFile
     if [[ ${OPTIONS} == '--secondary-stor' ]]; then
-        uploadBackupDir ${targetDir} full
+        uploadBackupDir ${targetDir} full/
     fi
 }
 
@@ -236,7 +236,7 @@ function incrRsync(){
         fi
     done < $hostFile
     if [[ ${OPTIONS} == '--secondary-stor' ]]; then
-        uploadBackupDir ${backupDir} incr
+        uploadBackupDir ${backupDir} incr/
     fi
 }
 
