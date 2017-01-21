@@ -28,9 +28,17 @@ REMOTE_HOSTS_FILE="${BACKUPMGR_CONFIG_DIR}${REMOTE_HOSTS_FILE:-/hosts.list}"
 # Se permite el uso de comentarios en las líneas siempre que estas empiecen por #
 REMOTE_HOSTS_DIR="${BACKUPMGR_CONFIG_DIR}${REMOTE_HOSTS_DIR:-/hosts.list.d}"
 
+# Lista de hosts de almacenamiento secundarios
+# formato:
+# alias:usuario:ip:/ruta-absoluta
+# ejemplo:
+# saturno:malcocer:172.22.111.11:/Backup-ASO/malcocer
+SECONDARY_HOSTS_FILE="${BACKUPMGR_CONFIG_DIR}${REMOTE_HOSTS_FILE:-/secondary_hosts.list}"
+
 # Captura de parámetros
 COMMAND=$1
-OPTIONS=$2
+LASTOPT=${@: -1}
+OPTIONS=${@:2:-1}
 
 EXCLUDE=()
 
@@ -56,6 +64,8 @@ function checkConfig(){
         exitWithErr
     fi
 }
+
+# ZONA DE RESPALDOS COMPLETOS
 
 function fullRsyncFile(){
     # 1: usuario, 2:ip, 3:linea-completa, 4:destino local
@@ -123,6 +133,9 @@ function fullRsync(){
             esac
         fi
     done < $hostFile
+    if [[ ${OPTIONS} == '--secondary-stor' ]]; then
+        uploadBackupDir ${targetDir}
+    fi
 }
 
 function fullBackup(){
@@ -141,10 +154,10 @@ function incrRsyncFile(){
     BCKPFILE=$(cut -d':' -f3 <<< $3)
     case ${2,,} in
         localhost)
-            rsync -ab --backup-dir=$5 --relative ${BCKPFILE} $4
+            rsync -ab --checksum --backup-dir=$5 --relative ${BCKPFILE} $4
             ;;
         *)
-            rsync -ab --backup-dir=$5 --relative ${1}@${2}:${BCKPFILE} $4
+            rsync -ab --checksum --backup-dir=$5 --relative ${1}@${2}:${BCKPFILE} $4
             ;;
     esac
 }
@@ -158,10 +171,10 @@ function incrRsyncDir(){
     genExcludes $3
     case ${2,,} in
         localhost)
-            rsync -ab ${EXCLUDE} --backup-dir=$5 --relative ${BCKPDIR} $4
+            rsync -ab --checksum ${EXCLUDE} --delete --backup-dir=$5 --relative ${BCKPDIR} $4
             ;;
         *)
-            rsync -ab ${EXCLUDE} --backup-dir=$5 --relative ${1}@${2}:${BCKPDIR} $4
+            rsync -ab --checksum ${EXCLUDE} --delete --backup-dir=$5 --relative ${1}@${2}:${BCKPDIR} $4
             ;;
     esac
 }
@@ -192,6 +205,9 @@ function incrRsync(){
             esac
         fi
     done < $hostFile
+    if [[ ${OPTIONS} == '--secondary-stor' ]]; then
+        uploadBackupDir ${backupDir}
+    fi
 }
 
 function incrementalBackup(){
@@ -208,14 +224,14 @@ function main(){
     # Obtener IPS de equipos remotos
     case ${COMMAND,,} in
         full)
-            fullBackup
+            fullBackup $OPTIONS
             ;;
         incr)
-            incrementalBackup
+            incrementalBackup $OPTIONS
             ;;
     esac
 }
 
-[[ $OPTIONS = '-d' ]] && set -x
-main
-[[ $OPTIONS = '-d' ]] && set +x
+[[ $LASTOPT == '-d' ]] && set -x
+main $OPTIONS
+[[ $LASTOPT == '-d' ]] && set +x
