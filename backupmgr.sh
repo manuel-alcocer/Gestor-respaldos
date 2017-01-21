@@ -125,11 +125,12 @@ function createVars(){
     HOSTFILENAME="${REMOTE_HOSTS_DIR}/${ALIASHOST}"
     REMOTEUSERNAME=$(cut -d':' -f2 <<< $1)
     HOSTIP=$(cut -d':' -f3 <<< $1)
-    BACKUPDIR="${BASE_STOR}/${ALIASHOST}/incrSync/${2}"
     if [[ $3 == 'full' ]]; then
         TARGETDIR="${BASE_STOR}/${ALIASHOST}/fullSync/${2}"
+        BACKUPDIR="${TARGETDIR}"
     else
         TARGETDIR="${BASE_STOR}/${ALIASHOST}/fullSync/$(lastFullRsync ${ALIASHOST})"
+        BACKUPDIR="${BASE_STOR}/${ALIASHOST}/incrSync/${2}"
     fi
 }
 
