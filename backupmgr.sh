@@ -32,6 +32,8 @@ REMOTE_HOSTS_DIR="${BACKUPMGR_CONFIG_DIR}${REMOTE_HOSTS_DIR:-/hosts.list.d}"
 COMMAND=$1
 OPTIONS=$2
 
+EXCLUDE=()
+
 function exitWithErr(){
     printf 'Hubieron errores...Saliendo\n'
     exit 1
@@ -72,8 +74,7 @@ function rsyncCompleteFile(){
 }
 
 function genExcludes(){
-    unset EXCLUDE
-    export EXCLUDE=()
+    EXCLUDE=()
     excludeVal=$(cut -d':' -f4 <<< $1)
     if [[ ${excludeVal^^} == 'E' ]]; then
         excludeVals=${1#*:E:}
