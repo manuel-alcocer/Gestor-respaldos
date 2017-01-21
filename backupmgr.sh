@@ -38,8 +38,7 @@ SECONDARY_HOSTS_FILE="${BACKUPMGR_CONFIG_DIR}${SECONDARY_HOSTS_FILE:-/secondary_
 
 # CONTRASEÑA DE LA CLAVE SUMINISTRADA: Asd123
 # Para generar una clave nueva:
-# openssl genrsa -aes256 -out private_key.pem 4096
-# openssl rsa -in private_key.pem -out backupmgr.pubkey.pem -outform PEM -pubout
+# openssl req -x509 -newkey rsa:2048 -sha256 -keyout private_key.pem -out backupmgr.pubkey.pem
 
 OPENSSL_PUBKEY="${BACKUPMGR_CONFIG_DIR}${OPENSSL_PUBKEY:-/backupmgr.pubkey.pem}"
 
