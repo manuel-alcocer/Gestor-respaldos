@@ -166,8 +166,7 @@ function encryptObject(){
     targetTar="${targetFullPath}.tar.gz"
     targetEncryptedTar="${targetFullPath}.ENCRYPTED.tar.gz"
     tar czf "${targetFullPath}.tar.gz" "${targetFullPath}"
-    openssl rsautl -encrypt -inkey ${OPENSSL_PUBKEY} \
-        -pubin -in ${targetTar} -out ${targetEncryptedTar}
+    openssl smime -encrypt -binary -aes-256-cbc -in ${targetTar} -out ${targetEncryptedTar} -outform DER ${OPENSSL_PUBKEY}
 }
 
 function mainRsync(){
