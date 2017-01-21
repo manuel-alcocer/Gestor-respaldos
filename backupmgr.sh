@@ -55,7 +55,6 @@ function exitWithErr(){
     exit 1
 }
 
-# Crear array con la lista de hosts
 function getRemoteHost(){
     while IFS= read -r linea; do
         REMOTE_HOSTS+=("${linea}")
@@ -77,7 +76,6 @@ function checkConfig(){
     fi
 }
 
-# Generar lista de exclusiones
 function genExcludes(){
     EXCLUDE=()
     excludeVal=$(cut -d':' -f4 <<< $1)
@@ -92,9 +90,6 @@ function genExcludes(){
     fi
 }
 
-# ############################################ #
-# ZONA DE SUBIDA A ALMACENAMIENTOS SECUNDARIOS #
-# ############################################ #
 function uploadBackupDir(){
     temporaryTar=/tmp/${2##*/}-${1}-${3}.tar.gz
     tar czf ${temporaryTar} ${2}
@@ -116,10 +111,6 @@ function lastFullRsync(){
     printf "${lastDir}\n"
 }
 
-# ##############################################
-# ##############################################
-
-# Creación de variables para rutas de respaldo y destino
 function createVars(){
     ALIASHOST=$(cut -d':' -f1 <<< $1)
     HOSTFILENAME="${REMOTE_HOSTS_DIR}/${ALIASHOST}"
@@ -135,20 +126,18 @@ function createVars(){
 }
 
 function rsyncObjects(){
-    # 1:tipo, 2:linea-completa
-    # Configuración de opciones para completa o incremental 
     case $1 in
-        incrF)
+        incrFNC)
             rsyncOPTS="-ab --checksum --backup-dir=${BACKUPDIR} --relative"
             ;;
-        fullF)
+        fullFNC)
             rsyncOPTS="-a --relative"
             ;;
-        incrD)
+        incrDNC)
             genExcludes $2
             rsyncOPTS="-ab --checksum ${EXCLUDE} --delete --backup-dir=${BACKUPDIR} --relative"
             ;;
-        fullD)
+        fullDNC)
             genExcludes $2
             rsyncOPTS="-a ${EXCLUDE} --relative"
             ;;
@@ -157,7 +146,6 @@ function rsyncObjects(){
         mkdir -p ${TARGETDIR}
     fi
     BCKPOBJ=$(cut -d':' -f3 <<< $2)
-    # Si la IP es localhost, el respaldo es local
     if [[ ${HOSTIP,,} != 'localhost' ]]; then
         BCKPOBJ="${REMOTEUSERNAME}@${HOSTIP}:${BCKPOBJ}"
     fi
@@ -169,14 +157,16 @@ function mainRsync(){
     while IFS= read -r linea; do
         if [[ ! ${linea} =~ ^[[:space:]]*#.* ]]; then
             objectType=$(cut -d':' -f1 <<< ${linea})
-            case ${objectType,,} in
-                f)
-                    rsyncObjects ${1}F ${linea}
-                    ;;
-                d)
-                    rsyncObjects ${1}D ${linea}
-                    ;;
-            esac
+            storSecurity=$(cut -d':' -f2 <<< ${linea})
+            rsyncObjects ${1}${objectType}${storSecurity} ${linea}
+#            case ${objectType,,} in
+#                f)
+#                    rsyncObjects ${1}F ${linea}
+#                    ;;
+#                d)
+#                    rsyncObjects ${1}D ${linea}
+#                    ;;
+#            esac
         fi
     done < $HOSTFILENAME
     if [[ ${OPTIONS} == '--secondary-stor' ]]; then
@@ -193,13 +183,9 @@ function makeBackup(){
     done
 }
 
-# ############################ #
-# FUNCIÓN DE LLAMADA PRINCIPAL #
-# ############################ #
 function main(){
     # comprobar ficheros necesarios
     checkConfig
-    # Obtener IPS de equipos remotos
     case ${COMMAND,,} in
         full)
             makeBackup full
@@ -210,7 +196,6 @@ function main(){
     esac
 }
 
-# Llamada principal
 [[ $LASTOPT == '-d' ]] && set -x
 main $OPTIONS
 [[ $LASTOPT == '-d' ]] && set +x
