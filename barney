@@ -1,2 +1,2 @@
-f:nc:/etc/fstab
-d:nc:/var/cache/bind:E:managed-keys.*
+F:NC:/etc/fstab
+D:NC:/var/cache/bind:E:managed-keys.*
