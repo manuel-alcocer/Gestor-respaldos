@@ -39,7 +39,7 @@ SECONDARY_HOSTS_FILE="${BACKUPMGR_CONFIG_DIR}${SECONDARY_HOSTS_FILE:-/secondary_
 # Captura de parámetros
 COMMAND=$1
 LASTOPT=${@: -1}
-OPTIONS=${@:2:-1}
+OPTIONS=$2
 
 EXCLUDE=()
 
