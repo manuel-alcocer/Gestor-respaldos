@@ -36,6 +36,14 @@ REMOTE_HOSTS_DIR="${BACKUPMGR_CONFIG_DIR}${REMOTE_HOSTS_DIR:-/hosts.list.d}"
 # saturno:malcocer:172.22.111.11:/Backup-ASO/malcocer
 SECONDARY_HOSTS_FILE="${BACKUPMGR_CONFIG_DIR}${SECONDARY_HOSTS_FILE:-/secondary_hosts.list}"
 
+# CONTRASEÑA DE LA CLAVE SUMINISTRADA: Asd123
+# Para generar una clave nueva:
+# openssl genrsa -aes256 -out private_key.pem 4096
+# openssl rsa -in private_key.pem -out backupmgr.pubkey.pem -outform PEM -pubout
+
+OPENSSL_PUBKEY="{BACKUPMGR_CONFIG_DIR}${OPENSSL_PUBKEY:-/backupmgr.pubkey.pem}"
+
+
 # Captura de parámetros
 COMMAND=$1
 LASTOPT=${@: -1}
@@ -127,17 +135,17 @@ function createVars(){
 
 function rsyncObjects(){
     case $1 in
-        incrFNC)
+        incrF)
             rsyncOPTS="-ab --checksum --backup-dir=${BACKUPDIR} --relative"
             ;;
-        fullFNC)
+        fullF)
             rsyncOPTS="-a --relative"
             ;;
-        incrDNC)
+        incrD)
             genExcludes $2
             rsyncOPTS="-ab --checksum ${EXCLUDE} --delete --backup-dir=${BACKUPDIR} --relative"
             ;;
-        fullDNC)
+        fullD)
             genExcludes $2
             rsyncOPTS="-a ${EXCLUDE} --relative"
             ;;
@@ -153,20 +161,25 @@ function rsyncObjects(){
     rsync ${rsyncOPTS} ${BCKPOBJ} ${TARGETDIR}
 }
 
+function encryptObject(){
+    targetObject=$(cut -d':' -f3 <<< $1)
+    targetFullPath="${TARGETDIR}/${targetObject}"
+    targetTar="${targetFullPath}.tar.gz"
+    targetEncryptedTar="${targetFullPath}.ENCRYPTED.tar.gz"
+    tar czf "${targetFullPath}.tar.gz" "${targetFullPath}"
+    openssl rsautl -encrypt -inkey ${OPENSSL_PUBKEY} \
+        -pubin -in ${targetTar} -out ${targetEncryptedTar}
+}
+
 function mainRsync(){
     while IFS= read -r linea; do
         if [[ ! ${linea} =~ ^[[:space:]]*#.* ]]; then
             objectType=$(cut -d':' -f1 <<< ${linea})
+            rsyncObjects ${1}${objectType^^} ${linea}
             storSecurity=$(cut -d':' -f2 <<< ${linea})
-            rsyncObjects ${1}${objectType}${storSecurity} ${linea}
-#            case ${objectType,,} in
-#                f)
-#                    rsyncObjects ${1}F ${linea}
-#                    ;;
-#                d)
-#                    rsyncObjects ${1}D ${linea}
-#                    ;;
-#            esac
+            if [[ ${storSecurity^^} == 'NC' ]]; then
+                encryptObject ${linea}
+            fi
         fi
     done < $HOSTFILENAME
     if [[ ${OPTIONS} == '--secondary-stor' ]]; then
