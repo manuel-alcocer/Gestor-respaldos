@@ -126,9 +126,9 @@ function rsyncObjects(){
 
 function encryptObject(){
     targetObject=$(cut -d':' -f3 <<< $1)
-    targetFullPath="${TARGETDIR}/${targetObject}"
+    targetFullPath="${BACKUPDIR}/${targetObject}"
     targetTar="${targetFullPath}.tar.gz"
-    targetEncryptedTar="${TARGETDIR}/${targetObject//\//-}.ENCRYPTED.tar.gz"
+    targetEncryptedTar="${BACKUPDIR}/${targetObject//\//-}.ENCRYPTED.tar.gz"
     tar czf "${targetFullPath}.tar.gz" "${targetFullPath}"
     openssl smime -encrypt -binary -aes-256-cbc -in ${targetTar} -out ${targetEncryptedTar} -outform DER ${OPENSSL_PUBKEY}
     rm -rf ${targetFullPath} ${targetTar}
