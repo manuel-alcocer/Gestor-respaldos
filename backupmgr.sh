@@ -142,9 +142,9 @@ function mainRsync(){
     while IFS= read -r linea; do
         if [[ ! ${linea} =~ ^[[:space:]]*#.* ]]; then
             objectType=$(cut -d':' -f1 <<< ${linea})
+            unset storSecurity
             storSecurity=$(cut -d':' -f2 <<< ${linea})
             rsyncObjects ${1}${objectType^^}${storSecurity} ${linea}
-            unset storSecurity
             if [[ ${storSecurity^^} == 'C' ]]; then
                 encryptObject ${linea}
             fi
