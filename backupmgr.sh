@@ -131,7 +131,7 @@ function encryptObject(){
     targetEncryptedTar="${BACKUPDIR}/${targetObject//\//-}.ENCRYPTED.tar.gz"
     tar czf "${targetFullPath}.tar.gz" "${targetFullPath}"
     openssl smime -encrypt -binary -aes-256-cbc -in ${targetTar} -out ${targetEncryptedTar} -outform DER ${OPENSSL_PUBKEY}
-    #rm -rf ${targetFullPath} ${targetTar}
+    rm -rf ${targetFullPath} ${targetTar}
 }
 
 function mainRsync(){
