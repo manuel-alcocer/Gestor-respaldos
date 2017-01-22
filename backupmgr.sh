@@ -170,7 +170,7 @@ function makeBackup(){
     for remoteHost in "${REMOTE_HOSTS[@]}"; do
         createVars "${remoteHost}" "${currentDate}" $1
         mainRsync $1
-        checkArgs
+        checkArgs $1
     done
 }
 
