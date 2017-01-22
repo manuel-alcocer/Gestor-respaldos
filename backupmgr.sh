@@ -99,27 +99,31 @@ function createVars(){
 
 function rsyncObjects(){
     case $1 in
-        incrF)
+        incrFNC)
             rsyncOPTS="-ab --checksum --backup-dir=${BACKUPDIR} --relative"
             ;;
-        fullF)
+        fullF*|incrFC)
             rsyncOPTS="-a --relative"
             ;;
-        incrD)
+        incrDNC)
             genExcludes $2
             rsyncOPTS="-ab --checksum ${EXCLUDE} --delete --backup-dir=${BACKUPDIR} --relative"
             ;;
-        fullD)
+        fullD*|incrDC)
             genExcludes $2
             rsyncOPTS="-a ${EXCLUDE} --relative"
             ;;
     esac
-    if [[ ! -d ${TARGETDIR} ]]; then
-        mkdir -p ${TARGETDIR}
+    if [[ ! -d ${BACKUPDIR} ]]; then
+        mkdir -p ${BACKUPDIR}
     fi
     BCKPOBJ=$(cut -d':' -f3 <<< $2)
     if [[ ${HOSTIP,,} != 'localhost' ]]; then
         BCKPOBJ="${REMOTEUSERNAME}@${HOSTIP}:${BCKPOBJ}"
+    fi
+    # si la ruta de respaldos es cifrada, hay que hacerla completa pero guardándola en incr
+    if [[ $1 == 'incrFC' || $1 == 'incrDC' ]]; then
+        TARGETDIR=$BACKUPDIR
     fi
     rsync ${rsyncOPTS} -v --stats --progress ${BCKPOBJ} ${TARGETDIR}
 }
@@ -138,9 +142,9 @@ function mainRsync(){
     while IFS= read -r linea; do
         if [[ ! ${linea} =~ ^[[:space:]]*#.* ]]; then
             objectType=$(cut -d':' -f1 <<< ${linea})
-            rsyncObjects ${1}${objectType^^} ${linea}
-            unset storSecurity
             storSecurity=$(cut -d':' -f2 <<< ${linea})
+            rsyncObjects ${1}${objectType^^}${storSecurity} ${linea}
+            unset storSecurity
             if [[ ${storSecurity^^} == 'C' ]]; then
                 encryptObject ${linea}
             fi
