@@ -8,9 +8,9 @@ REMOTE_HOSTS_DIR="${BACKUPMGR_CONFIG_DIR}${REMOTE_HOSTS_DIR:-/hosts.list.d}"
 SECONDARY_HOSTS_FILE="${BACKUPMGR_CONFIG_DIR}${SECONDARY_HOSTS_FILE:-/secondary_hosts.list}"
 OPENSSL_PUBKEY="${BACKUPMGR_CONFIG_DIR}${OPENSSL_PUBKEY:-/backupmgr.pubkey.pem}"
 
-COMMAND=$1
+BACKUPTYPE=$1
 LASTOPT=${@: -1}
-OPTIONS=$2
+ARGUMENTS="${@:2}"
 
 EXCLUDE=()
 
@@ -145,9 +145,23 @@ function mainRsync(){
             fi
         fi
     done < $HOSTFILENAME
-    if [[ ${OPTIONS} == '--secondary-stor' ]]; then
-        uploadBackupDir ${ALIASHOST} ${BACKUPDIR} ${1}
-    fi
+}
+
+function removeBackups(){
+    :
+}
+
+function checkArgs(){
+    for argument in ${ARGUMENTS}; do
+        case ${argument} in
+            '--secondary-stor')
+                uploadBackupDir ${ALIASHOST} ${BACKUPDIR} ${1}
+                ;;
+            '--remove')
+                removeBackups ${ALIASHOST} ${BACKUPDIR} ${1}
+                ;;
+        esac
+    done
 }
 
 function makeBackup(){
@@ -156,12 +170,13 @@ function makeBackup(){
     for remoteHost in "${REMOTE_HOSTS[@]}"; do
         createVars "${remoteHost}" "${currentDate}" $1
         mainRsync $1
+        checkArgs
     done
 }
 
 function main(){
     checkConfig
-    case ${COMMAND,,} in
+    case ${BACKUPTYPE,,} in
         full)
             makeBackup full
             ;;
@@ -175,5 +190,5 @@ function main(){
 }
 
 [[ $LASTOPT == '-d' ]] && set -x
-main $OPTIONS
+main
 [[ $LASTOPT == '-d' ]] && set +x
