@@ -125,7 +125,7 @@ function rsyncObjects(){
     if [[ $1 == 'incrFC' || $1 == 'incrDC' ]]; then
         TARGETDIR=$BACKUPDIR
     fi
-    rsync ${rsyncOPTS} -v --stats --progress ${BCKPOBJ} ${TARGETDIR}
+    rsync ${rsyncOPTS} ${BCKPOBJ} ${TARGETDIR}
 }
 
 function encryptObject(){
