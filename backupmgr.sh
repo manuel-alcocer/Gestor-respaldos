@@ -20,6 +20,8 @@ REMOTEUSERNAME=''
 HOSTIP=''
 BACKUPDIR=''
 TARGETDIR=''
+FULLWEEKS=''
+INCRWEEKS=''
 
 function exitWithErr(){
     printf 'Hubieron errores...Saliendo\n'
@@ -88,6 +90,8 @@ function setVars(){
     HOSTFILENAME="${REMOTE_HOSTS_DIR}/${ALIASHOST}"
     REMOTEUSERNAME=$(cut -d':' -f2 <<< $1)
     HOSTIP=$(cut -d':' -f3 <<< $1)
+    FULLWEEKS=$(cut -d':' -f4 <<< $1)
+    INCRWEEKS=$(cut -d':' -f4 <<< $1)
     if [[ $3 == 'full' ]]; then
         TARGETDIR="${BASE_STOR}/${ALIASHOST}/fullSync/${2}"
         BACKUPDIR="${TARGETDIR}"
@@ -156,11 +160,28 @@ function mainRsync(){
     done < $HOSTFILENAME
 }
 
+function diffDates(){
+    origin=${1##*/}
+    target=${2##*/}
+    originY=$(cut -d'-' -f1 <<< ${origin})
+    targetY=$(cut -d'-' -f1 <<< ${origin})
+    weeksOffset=$(((originY-targetY)*52))
+    originW=$(cut -d'-' -f2 <<< ${origin})
+    targetW=$(cut -d'-' -f2 <<< ${origin})
+    weeksDiff=$((originW + weeksOffset - targetW))
+    printf "${weeksDiff}\n"
+}
+
 function removeBackups(){
     currentBackupDIR=${BACKUPDIR}
+    currentObject=${currentBackupDIR##*/}
     currentParentPath=${BACKUPDIR%/*}
     printf "${currentBackupDIR}\n"
     printf "${currentParentPath}\n"
+    for backupDir in ${currentParentPath}/*; do
+        weeks=$(diffDates ${currentBackupDIR} ${backupDir})
+        :
+    done
 }
 
 function checkArgs(){
