@@ -61,6 +61,13 @@ function genExcludes(){
     fi
 }
 
+function rsyncToSecondary(){
+    secRemUser=$(cut -d':' -f2 <<< $1)
+    secRemHost=$(cut -d':' -f3 <<< $1)
+    secRemDir="$(cut -d':' -f4 <<< $1)/${2}/${3}"
+    rsync $4 ${secRemUser}@${secRemHost}:${secRemDir}
+}
+
 function uploadBackupDir(){
     temporaryTar=/tmp/${2##*/}-${1}-${3}.tar.gz
     tar czf ${temporaryTar} ${2}
@@ -70,20 +77,13 @@ function uploadBackupDir(){
     rm ${temporaryTar}
 }
 
-function rsyncToSecondary(){
-    secRemUser=$(cut -d':' -f2 <<< $1)
-    secRemHost=$(cut -d':' -f3 <<< $1)
-    secRemDir="$(cut -d':' -f4 <<< $1)/${2}/${3}"
-    rsync $4 ${secRemUser}@${secRemHost}:${secRemDir}
-}
-
 function lastFullRsync(){
     baseDir="${BASE_STOR}/${1}/fullSync"
     lastDir="$(ls -t ${baseDir} | head -n1)"
     printf "${lastDir}\n"
 }
 
-function createVars(){
+function setVars(){
     ALIASHOST=$(cut -d':' -f1 <<< $1)
     HOSTFILENAME="${REMOTE_HOSTS_DIR}/${ALIASHOST}"
     REMOTEUSERNAME=$(cut -d':' -f2 <<< $1)
@@ -95,6 +95,21 @@ function createVars(){
         TARGETDIR="${BASE_STOR}/${ALIASHOST}/fullSync/$(lastFullRsync ${ALIASHOST})"
         BACKUPDIR="${BASE_STOR}/${ALIASHOST}/incrSync/${2}"
     fi
+}
+
+function rsyncNow(){
+    if [[ ! -d ${BACKUPDIR} ]]; then
+        mkdir -p ${BACKUPDIR}
+    fi
+    BCKPOBJ=$(cut -d':' -f3 <<< $2)
+    if [[ ${HOSTIP,,} != 'localhost' ]]; then
+        BCKPOBJ="${REMOTEUSERNAME}@${HOSTIP}:${BCKPOBJ}"
+    fi
+    # si la ruta de respaldos es cifrada, hay que hacerla completa pero guardándola en incr
+    if [[ $1 == 'incrFC' || $1 == 'incrDC' ]]; then
+        TARGETDIR=$BACKUPDIR
+    fi
+    rsync ${rsyncOPTS} ${BCKPOBJ} ${TARGETDIR}
 }
 
 function rsyncObjects(){
@@ -114,18 +129,7 @@ function rsyncObjects(){
             rsyncOPTS="-a ${EXCLUDE} --relative"
             ;;
     esac
-    if [[ ! -d ${BACKUPDIR} ]]; then
-        mkdir -p ${BACKUPDIR}
-    fi
-    BCKPOBJ=$(cut -d':' -f3 <<< $2)
-    if [[ ${HOSTIP,,} != 'localhost' ]]; then
-        BCKPOBJ="${REMOTEUSERNAME}@${HOSTIP}:${BCKPOBJ}"
-    fi
-    # si la ruta de respaldos es cifrada, hay que hacerla completa pero guardándola en incr
-    if [[ $1 == 'incrFC' || $1 == 'incrDC' ]]; then
-        TARGETDIR=$BACKUPDIR
-    fi
-    rsync ${rsyncOPTS} ${BCKPOBJ} ${TARGETDIR}
+    rsyncNow $1 $2
 }
 
 function encryptObject(){
@@ -173,7 +177,7 @@ function makeBackup(){
     getRemoteHost
     currentDate=$(date +%y-%U-%m%d-%H%M)
     for remoteHost in "${REMOTE_HOSTS[@]}"; do
-        createVars "${remoteHost}" "${currentDate}" $1
+        setVars "${remoteHost}" "${currentDate}" $1
         mainRsync $1
         checkArgs $1
     done
