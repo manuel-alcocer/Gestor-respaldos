@@ -164,7 +164,7 @@ function removeBackups(){
 }
 
 function checkArgs(){
-    for argument in "${ARGUMENTS}"; do
+    for argument in ${ARGUMENTS}; do
         case ${argument} in
             '--secondary-stor')
                 uploadBackupDir ${ALIASHOST} ${BACKUPDIR} ${1}
