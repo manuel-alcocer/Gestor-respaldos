@@ -1,51 +1,13 @@
 #!/usr/bin/env bash
 
-# Variables globales y de entorno
-# ###############################
 REMOTE_HOSTS=()
-
-# Directorio base para el almacén de las copias de seguridad
-# Se puede cambiar estableciendo la variable del entorno BASE_STOR
 BASE_STOR=${BASE_STOR:-/BackUps}
-
-# Directorio de configuración de la aplicación
-# Se puede cambiar estableciendo la variable del entorno BACKUPMGR_CONFIG_DIR
 BACKUPMGR_CONFIG_DIR=${BACKUPMGR_CONFIG_DIR:-/etc/backupMgr}
-
-# Fichero con la definición de host remotos con formato: 'alias:usuario:IP'
-# Se puede cambiar este fichero estableciendo la variable del entorno REMOTE_HOSTS_FILE
 REMOTE_HOSTS_FILE="${BACKUPMGR_CONFIG_DIR}${REMOTE_HOSTS_FILE:-/hosts.list}"
-
-# cada host tiene asociado un fichero, de nombre el alias dado a la IP,
-# Se puede cambiar este directorio estableciendo la variable del entorno REMOTE_HOSTS_DIR
-# en el directorio de la aplicación $REMOTE_HOSTS_DIR con formato por línea:
-# (tipo de archivo: F-> Fichero, D-> Directorio):(Almacen cifrado: C, No cifrado: NC):(Ruta completa al fichero o directorio)[:(Excluir: E:F:RUTA)],
-# quedando así: <F|D>:<C|NC>:<Ruta>[:E:Ruta-o-fichero1:ruta-o-fichero-2:...], por ejemplo:
-# F:NC:/etc/fstab
-# D:C:/etc/ldap:E:/etc/ldap/schema:/etc/fstab
-# D:NC:/var/cache/bind
-# NOTA: las exclusiones solo se aplican a objetos directorios, las exclusiones pueden ser ficheros o directorios
-# Se permite el uso de comentarios en las líneas siempre que estas empiecen por #
 REMOTE_HOSTS_DIR="${BACKUPMGR_CONFIG_DIR}${REMOTE_HOSTS_DIR:-/hosts.list.d}"
-
-# Lista de hosts de almacenamiento secundarios
-# Se admiten varios destinos
-# formato:
-# alias:usuario:ip:/ruta-absoluta
-# ejemplo:
-# saturno:malcocer:172.22.111.11:/Backup-ASO/malcocer
 SECONDARY_HOSTS_FILE="${BACKUPMGR_CONFIG_DIR}${SECONDARY_HOSTS_FILE:-/secondary_hosts.list}"
-
-# CONTRASEÑA DE LA CLAVE SUMINISTRADA: Asd123
-# Para generar una clave nueva:
-# openssl req -x509 -newkey rsa:2048 -sha256 -keyout private_key.pem -out backupmgr.pubkey.pem
-# Para descifrar el fichero:
-# openssl smime -decrypt -in fichero.ENCRYPTED.tar.gz -binary -inform DEM -inkey private_key.pem -out fichero.DECRYPTED.tar.gz
-
 OPENSSL_PUBKEY="${BACKUPMGR_CONFIG_DIR}${OPENSSL_PUBKEY:-/backupmgr.pubkey.pem}"
 
-
-# Captura de parámetros
 COMMAND=$1
 LASTOPT=${@: -1}
 OPTIONS=$2
@@ -158,7 +120,6 @@ function rsyncObjects(){
     if [[ ${HOSTIP,,} != 'localhost' ]]; then
         BCKPOBJ="${REMOTEUSERNAME}@${HOSTIP}:${BCKPOBJ}"
     fi
-    # Ejecución del respaldo
     rsync ${rsyncOPTS} ${BCKPOBJ} ${TARGETDIR}
 }
 
@@ -199,7 +160,6 @@ function makeBackup(){
 }
 
 function main(){
-    # comprobar ficheros necesarios
     checkConfig
     case ${COMMAND,,} in
         full)
@@ -207,6 +167,9 @@ function main(){
             ;;
         incr)
             makeBackup incr
+            ;;
+        *)
+            printf 'Error en el comando\n'
             ;;
     esac
 }
