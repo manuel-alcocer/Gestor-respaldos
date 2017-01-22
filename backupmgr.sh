@@ -121,7 +121,7 @@ function rsyncObjects(){
     if [[ ${HOSTIP,,} != 'localhost' ]]; then
         BCKPOBJ="${REMOTEUSERNAME}@${HOSTIP}:${BCKPOBJ}"
     fi
-    rsync ${rsyncOPTS} ${BCKPOBJ} ${TARGETDIR}
+    rsync ${rsyncOPTS} -v --stats --progress ${BCKPOBJ} ${TARGETDIR}
 }
 
 function encryptObject(){
