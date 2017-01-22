@@ -26,12 +26,6 @@ function exitWithErr(){
     exit 1
 }
 
-function getRemoteHost(){
-    while IFS= read -r linea; do
-        REMOTE_HOSTS+=("${linea}")
-    done < ${REMOTE_HOSTS_FILE}
-}
-
 function checkConfig(){
     if [[ ! -f ${REMOTE_HOSTS_FILE} ]]; then
         printf "No existe el fichero de hosts remotos ${REMOTE_HOSTS_FILE}\n"
@@ -45,6 +39,12 @@ function checkConfig(){
         printf "No existe el fichero de almacenamiento secundario ${SECONDARY_HOSTS_FILE}\n"
         exitWithErr
     fi
+}
+
+function getRemoteHost(){
+    while IFS= read -r linea; do
+        REMOTE_HOSTS+=("${linea}")
+    done < ${REMOTE_HOSTS_FILE}
 }
 
 function genExcludes(){
@@ -61,7 +61,7 @@ function genExcludes(){
     fi
 }
 
-function rsyncToSecondary(){
+function rsyncToSecondaryNow(){
     secRemUser=$(cut -d':' -f2 <<< $1)
     secRemHost=$(cut -d':' -f3 <<< $1)
     secRemDir="$(cut -d':' -f4 <<< $1)/${2}/${3}"
@@ -72,7 +72,7 @@ function uploadBackupDir(){
     temporaryTar=/tmp/${2##*/}-${1}-${3}.tar.gz
     tar czf ${temporaryTar} ${2}
     while IFS= read -r linea; do
-        rsyncToSecondary ${linea} $1 $3 ${temporaryTar}
+        rsyncToSecondaryNow ${linea} $1 $3 ${temporaryTar}
     done < ${SECONDARY_HOSTS_FILE}
     rm ${temporaryTar}
 }
@@ -112,7 +112,7 @@ function rsyncNow(){
     rsync ${rsyncOPTS} ${BCKPOBJ} ${TARGETDIR}
 }
 
-function rsyncObjects(){
+function setRsyncOptions(){
     case $1 in
         incrFNC)
             rsyncOPTS="-ab --checksum --backup-dir=${BACKUPDIR} --relative"
@@ -146,9 +146,9 @@ function mainRsync(){
     while IFS= read -r linea; do
         if [[ ! ${linea} =~ ^[[:space:]]*#.* ]]; then
             objectType=$(cut -d':' -f1 <<< ${linea})
-            unset storSecurity
+            #unset storSecurity
             storSecurity=$(cut -d':' -f2 <<< ${linea})
-            rsyncObjects ${1}${objectType^^}${storSecurity} ${linea}
+            setRsyncOptions ${1}${objectType^^}${storSecurity} ${linea}
             if [[ ${storSecurity^^} == 'C' ]]; then
                 encryptObject ${linea}
             fi
@@ -157,11 +157,14 @@ function mainRsync(){
 }
 
 function removeBackups(){
-    :
+    currentBackupDIR=${BACKUPDIR}
+    currentParentPath=${BACKUPDIR%/*}
+    printf "${currentBackupDIR}\n"
+    printf "${currentParentPath}\n"
 }
 
 function checkArgs(){
-    for argument in ${ARGUMENTS}; do
+    for argument in "${ARGUMENTS}"; do
         case ${argument} in
             '--secondary-stor')
                 uploadBackupDir ${ALIASHOST} ${BACKUPDIR} ${1}
