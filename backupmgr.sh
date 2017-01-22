@@ -67,6 +67,7 @@ function uploadBackupDir(){
     while IFS= read -r linea; do
         rsyncToSecondary ${linea} $1 $3 ${temporaryTar}
     done < ${SECONDARY_HOSTS_FILE}
+    rm ${temporaryTar}
 }
 
 function rsyncToSecondary(){
