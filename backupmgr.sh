@@ -126,7 +126,7 @@ function rsyncObjects(){
 
 function encryptObject(){
     targetObject=$(cut -d':' -f3 <<< $1)
-    targetFullPath="${BACKUPDIR}/${targetObject}"
+    targetFullPath="${BACKUPDIR}/${targetObject/\//}"
     targetTar="${targetFullPath}.tar.gz"
     targetEncryptedTar="${BACKUPDIR}/${targetObject//\//-}.ENCRYPTED.tar.gz"
     tar czf "${targetFullPath}.tar.gz" "${targetFullPath}"
