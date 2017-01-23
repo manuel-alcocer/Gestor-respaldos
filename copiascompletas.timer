@@ -1,0 +1,9 @@
+[Unit]
+Description=Ejecuta una copia completa
+
+[Timer]
+OnCalendar=Sun *-*-* 03:00:00
+Persistent=true
+ 
+[Install]
+WantedBy=multi-user.target
