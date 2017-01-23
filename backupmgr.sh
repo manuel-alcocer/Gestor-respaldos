@@ -270,7 +270,7 @@ function cleanIncr(){
     fullPath="${BASE_STOR}/${ALIASHOST}/incrSync"
     INCRTIME=$(calcSecs $INCRTIME)
     actualDir=${ARGUMENTS}
-    for backUPDir in *; do
+    for backUPDir in ${fullPath}/*; do
         compDir=${backUPDir##*/}
         diffTime=$((actualDir - compDir))
         if [[ $diffTime > $INCRTIME ]]; then
