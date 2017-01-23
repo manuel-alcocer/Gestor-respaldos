@@ -153,7 +153,7 @@ function encryptObject(){
     targetFullPath="${BACKUPDIR}/${targetObject/\//}"
     targetTar="${targetFullPath}.tar.gz"
     targetEncryptedTar="${BACKUPDIR}/${targetObject//\//-}.ENCRYPTED.tar.gz"
-    tar czf "${targetFullPath}.tar.gz" "${targetFullPath}"
+    tar czf "${targetFullPath}.tar.gz" "${targetFullPath}" &>/dev/null
     openssl smime -encrypt -binary -aes-256-cbc -in ${targetTar} -out ${targetEncryptedTar} -outform DER ${OPENSSL_PUBKEY}
     rm -rf ${targetFullPath} ${targetTar}
 }
@@ -199,7 +199,7 @@ function makeBackup(){
         MSG="ERROR:$currentDate\n"
         sendMail $POSTMASTER $currentDate
     fi
-    printf "$MSG" > ${BACKUPMGR_CONFIG_DIR}/last-backup.log
+    printf "$MSG\n" > ${BACKUPMGR_CONFIG_DIR}/last-backup.log
 }
 
 function genPkgList(){
