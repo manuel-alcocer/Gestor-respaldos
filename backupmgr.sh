@@ -240,8 +240,7 @@ function calcSecs(){
     case $1 in
         *y)
             LIMITTIME=${1%y}
-            daysOfYear=$(date -d "$(date +%Y)-12-31" +%j)
-            LIMITTIME=$(( LIMITTIME * ${daysOfYear} * 24 * 3600 ))
+            LIMITTIME=$(( LIMITTIME * 365 * 24 * 3600 ))
             ;;
         *m)
             LIMITTIME=${1%m}
@@ -266,21 +265,21 @@ function calcSecs(){
     printf "$LIMITTIME\n"
 }
 
-function cleanIncr(){
-    fullPath="${BASE_STOR}/${ALIASHOST}/incrSync"
-    INCRTIME=$(calcSecs $INCRTIME)
+function cleanDirNow(){
+    fullPath="${BASE_STOR}/${ALIASHOST}/$1"
+    COMPTIME=$(calcSecs $2)
     actualDir=${ARGUMENTS}
     for backUPDir in ${fullPath}/*; do
         compDir=${backUPDir##*/}
         diffTime=$((actualDir - compDir))
-        if [[ $diffTime > $INCRTIME ]]; then
+        if [[ $diffTime > $COMPTIME ]]; then
             rm -rf $backUPDir
         fi
         printf "ARG: $actualDir\n"
         printf "backUPDir: ${backUPDir}\n"
         printf "diff: ${diffTime}\n"
     done
-    printf "${INCRTIME}\n"
+    printf "${2}\n"
 }
 
 function cleanUp(){
@@ -289,9 +288,9 @@ function cleanUp(){
     for remoteHost in "${REMOTE_HOSTS[@]}"; do
         setVars "${remoteHost}" "${currentDate}"
         if [[ $1 == 'incr' ]]; then
-            cleanIncr
+            cleanDirNow incrSync $INCRTIME
         elif [[ $1 == 'full' ]]; then
-            cleanFull
+            cleanDirNow fullSync $FULLTIME
         fi
     done
 }
