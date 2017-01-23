@@ -1,0 +1,10 @@
+[Unit]
+Description=Crear copias incrementales
+
+[Service]
+User=root
+Type=simple
+ExecStart=/root/.local/bin/tareaincremental.sh
+
+[Install]
+WantedBy=multi-user.target

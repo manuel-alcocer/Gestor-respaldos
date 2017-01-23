@@ -1,0 +1,10 @@
+[Unit]
+Description=Crear copias completas
+
+[Service]
+User=root
+Type=simple
+ExecStart=/root/.local/bin/tareacompleta.sh
+
+[Install]
+WantedBy=multi-user.target
