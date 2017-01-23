@@ -20,6 +20,8 @@ ARGUMENTS="${@:2}"
 
 EXCLUDE=()
 
+ERRORFUNCTION=()
+
 ALIASHOST=''
 HOSTFILENAME=''
 REMOTEUSERNAME=''
@@ -79,7 +81,10 @@ function rsyncToSecondaryNow(){
     secRemHost=$(cut -d':' -f3 <<< $1)
     secRemDir="$(cut -d':' -f4 <<< $1)/${2}/${3}"
     rsync $4 ${secRemUser}@${secRemHost}:${secRemDir}
-    [[ $? != 0 ]] && ((NUMERRORS++))
+    if [[ $? != 0 ]]; then
+        ((NUMERRORS++))
+        ERRORFUNCTION+=("$ALIASHOST - Error subiendo a secundario: ${secRemHost} - ${secRemDir}\n")
+    fi
 }
 
 function uploadBackupDir(){
@@ -127,7 +132,10 @@ function rsyncNow(){
         TARGETDIR=$BACKUPDIR
     fi
     rsync ${rsyncOPTS} ${BCKPOBJ} ${TARGETDIR}
-    [[ $? != 0 ]] && ((NUMERRORS++))
+    if [[ $? != 0 ]]; then
+        ((NUMERRORS++))
+        ERRORFUNCTION+=("${ALIASHOST} - Error sincronizando: ${BCKPOBJ} - ${BACKUPDIR}\n")
+    fi
 }
 
 function setRsyncOptions(){
@@ -198,12 +206,16 @@ function makeBackup(){
         checkArgs $1
     done
     if [[ ${NUMERRORS} == 0 ]]; then
-        MSG="OK:$currentDate\n"
+        MSG=("OK:$currentDate\n")
+        printf "$MSG" > $LOGFILE
     else
-        MSG="ERROR:$currentDate\n"
+        MSG=("ERROR:$currentDate.\nError mientras se hacia la copia de seguridad.\n")
+        for errormsg in "${ERRORFUNCTION[@]}"; do
+            MSG+=$errormsg
+        done
+        printf "$MSG" > $LOGFILE
         sendError $currentDate
     fi
-    printf "$MSG" > $LOGFILE
 }
 
 function genPkgList(){
