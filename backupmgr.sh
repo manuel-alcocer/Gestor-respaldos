@@ -180,7 +180,7 @@ function makeBackup(){
     done
 }
 
-function genCommand(){
+function genPkgList(){
     case ${OSDISTRO,,} in
         debian|ubuntu)
             PKGCMD='dpkg --get-selections'
@@ -189,18 +189,15 @@ function genCommand(){
             PKGCMD='yum list installed'
             ;;
     esac
-}
-
-function genPkgList(){
     ssh ${REMOTEUSERNAME}@${HOSTIP} "$PKGCMD > $PKGLISTNAME"
 }
+
 
 function pkgSave(){
     getRemoteHost
     currentDate=$(date +%y-%U-%m%d-%H%M)
     for remoteHost in "${REMOTE_HOSTS[@]}"; do
         setVars "${remoteHost}" "${currentDate}" $1
-        genCommand
         genPkgList
     done
 }
