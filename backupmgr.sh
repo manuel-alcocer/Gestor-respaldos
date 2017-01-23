@@ -12,7 +12,7 @@ PKGLISTNAME='listado-paquetes.list.txt'
 
 BACKUPTYPE=$1
 LASTOPT=${@: -1}
-ARGUMENTS=$2
+ARGUMENTS="${@:2}"
 
 EXCLUDE=()
 
