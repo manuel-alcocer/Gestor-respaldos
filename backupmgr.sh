@@ -272,14 +272,15 @@ function calcSecs(){
 
 function cleanIncr(){
     fullPath="${BASE_STOR}/${ALIASHOST}/incrSync"
-    cd $fullPath
     INCRTIME=$(calcSecs $INCRTIME)
+    actualDir=${ARGUMENTS}
     for backUPDir in *; do
-        diffTime=$((ARGUMENTS - backUPDir))
+        compDir=${backUPDir##*/}
+        diffTime=$((actualDir - compDir))
         if [[ $diffTime > $INCRTIME ]]; then
             rm -rf $backUPDir
         fi
-        printf "ARG: $ARGUMENTS\n"
+        printf "ARG: $actualDir\n"
         printf "backUPDir: ${backUPDir}\n"
         printf "diff: ${diffTime}\n"
     done
