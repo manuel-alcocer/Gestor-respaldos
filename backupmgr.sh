@@ -17,6 +17,7 @@ POSTMASTER='manuel@alcocer.net'
 BACKUPTYPE=$1
 LASTOPT=${@: -1}
 ARGUMENTS=$2
+CLEANARG=$3
 
 EXCLUDE=()
 
@@ -265,6 +266,20 @@ function calcSecs(){
     printf "$LIMITTIME\n"
 }
 
+function cleanSecondaryNow(){
+    secRemUser=$(cut -d':' -f2 <<< $1)
+    secRemHost=$(cut -d':' -f3 <<< $1)
+    secRemDir="$(cut -d':' -f4 <<< $1)/${2}/${3}"
+    secFullPath="${secRemDir}/${4}.tar.gz"
+    ssh ${secRemUser}@${secRemHost} "rm ${secFullPath}"
+}
+
+function cleanSecondary(){
+    while IFS= read -r linea; do
+        cleanSecondaryNow ${linea} $2 $3 $1
+    done < ${SECONDARY_HOSTS_FILE}
+}
+
 function cleanDirNow(){
     fullPath="${BASE_STOR}/${ALIASHOST}/$1"
     COMPTIME=$(calcSecs $2)
@@ -274,12 +289,11 @@ function cleanDirNow(){
         diffTime=$((actualDir - compDir))
         if [[ $diffTime > $COMPTIME ]]; then
             rm -rf $backUPDir
+            if [[ $CLEANARG == '--secondary-stor' ]]; then
+                cleanSecondary $compDir ${ALIASHOST} $1
+            fi
         fi
-        printf "ARG: $actualDir\n"
-        printf "backUPDir: ${backUPDir}\n"
-        printf "diff: ${diffTime}\n"
     done
-    printf "${2}\n"
 }
 
 function cleanUp(){
