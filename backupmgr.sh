@@ -12,7 +12,7 @@ PKGLISTNAME='listado-paquetes.list.txt'
 
 BACKUPTYPE=$1
 LASTOPT=${@: -1}
-ARGUMENTS="${@:2}"
+ARGUMENTS=$2
 
 EXCLUDE=()
 
@@ -233,7 +233,13 @@ function cleanIncr(){
     cd $fullPath
     INCRTIME=$(calcSecs $INCRTIME)
     for backUPDir in *; do
-        :
+        diffTime=$((ARGUMENTS - backUPDir))
+        if [[ $diffTime > INCRTIME ]]; then
+            :
+        fi
+        printf "ARG: $ARGUMENTS\n"
+        printf "backUPDir: ${backUPDir}\n"
+        printf "diff: ${diffTime}"
     done
     print "${INCRTIME}\n"
 }
