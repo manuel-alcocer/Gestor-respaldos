@@ -194,12 +194,12 @@ function makeBackup(){
         checkArgs $1
     done
     if [[ ${NUMERRORS} == 0 ]]; then
-        MSG="OK:$currentDate\n"
+        MSG="OK:$currentDate"
     else
-        MSG="ERROR:$currentDate\n"
+        MSG="ERROR:$currentDate"
         sendMail $POSTMASTER $currentDate
     fi
-    printf "$MSG" > "${BACKUPMGR_CONFIG_DIR}/last-backup.log"
+    echo "$MSG" > "${BACKUPMGR_CONFIG_DIR}/last-backup.log"
 }
 
 function genPkgList(){
