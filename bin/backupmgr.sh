@@ -313,9 +313,11 @@ function main(){
     checkConfig
     case ${BACKUPTYPE,,} in
         full)
+            pkgSave
             makeBackup full
             ;;
         incr)
+            pkgSave
             makeBackup incr
             ;;
         pkgsave)
