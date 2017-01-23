@@ -200,7 +200,7 @@ function makeBackup(){
         MSG="ERROR:$currentDate\n"
         sendError $currentDate
     fi
-    printf "$MSG" > $logfile
+    printf "$MSG" > $LOGFILE
 }
 
 function genPkgList(){
