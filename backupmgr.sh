@@ -182,7 +182,7 @@ function checkArgs(){
 }
 
 function sendMail(){
-    printf "Error haciendo la copia $2" | mail "Error: $2" $POSTMASTER
+    printf "Error haciendo la copia $2\n" | ssmtp "Error: $2" $POSTMASTER
 }
 
 function makeBackup(){
