@@ -259,6 +259,13 @@ function calcSecs(){
             LIMITTIME=${1%d}
             LIMITTIME=$(( LIMITTIME * 24 * 3600 ))
             ;;
+        *h)
+            LIMITTIME=${1%h}
+            LIMITTIME=$(( LIMITTIME * 3600 ))
+            ;;
+        *s)
+            LIMITTIME=${1%s}
+            ;;
     esac
     printf "$LIMITTIME\n"
 }
