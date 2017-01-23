@@ -10,6 +10,7 @@ OPENSSL_PUBKEY="${BACKUPMGR_CONFIG_DIR}${OPENSSL_PUBKEY:-/backupmgr.pubkey.pem}"
 
 PKGLISTNAME='listado-paquetes.list.txt'
 
+LOGFILE="${BACKUPMGR_CONFIG_DIR}/last-backup.log"
 POSTMASTER='manuel@alcocer.net'
 
 BACKUPTYPE=$1
@@ -181,8 +182,8 @@ function checkArgs(){
     done
 }
 
-function sendMail(){
-    printf "Error haciendo la copia $2\n" | ssmtp "Error: $2" $POSTMASTER
+function sendError(){
+    mail -s "Error: $1" $POSTMASTER < ${LOGFILE}
 }
 
 function makeBackup(){
@@ -197,9 +198,9 @@ function makeBackup(){
         MSG="OK:$currentDate\n"
     else
         MSG="ERROR:$currentDate\n"
-        sendMail $POSTMASTER $currentDate
+        sendError $currentDate
     fi
-    printf "$MSG" > "${BACKUPMGR_CONFIG_DIR}/last-backup.log"
+    printf "$MSG" > $logfile
 }
 
 function genPkgList(){
