@@ -216,6 +216,10 @@ function calcSecs(){
             LIMITTIME=${1%m}
             LIMITTIME=$(( LIMITTIME * 30 * 24 * 3600 ))
             ;;
+        *w)
+            LIMITTIME=${1%w}
+            LIMITTIME=$(( LIMITTIME * 7 * 24 * 3600 ))
+            ;;
         *d)
             LIMITTIME=${1%d}
             LIMITTIME=$(( LIMITTIME * 24 * 3600 ))
