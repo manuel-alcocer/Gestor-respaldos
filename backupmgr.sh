@@ -194,9 +194,9 @@ function makeBackup(){
         checkArgs $1
     done
     if [[ ${NUMERRORS} == 0 ]]; then
-        MSG="OK:$currentDate"
+        MSG="OK:$currentDate\n"
     else
-        MSG="ERROR:$currentDate"
+        MSG="ERROR:$currentDate\n"
         sendMail $POSTMASTER $currentDate
     fi
     printf "$MSG" > "${BACKUPMGR_CONFIG_DIR}/last-backup.log"
