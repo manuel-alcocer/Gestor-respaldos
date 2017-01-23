@@ -241,7 +241,7 @@ function cleanIncr(){
         printf "backUPDir: ${backUPDir}\n"
         printf "diff: ${diffTime}\n"
     done
-    print "${INCRTIME}\n"
+    printf "${INCRTIME}\n"
 }
 
 function cleanUp(){
