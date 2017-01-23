@@ -180,7 +180,7 @@ function makeBackup(){
     done
 }
 
-function genPackages(){
+function genCommand(){
     case ${OSDISTRO,,} in
         debian|ubuntu)
             PKGCMD='dpkg --get-selections'
@@ -203,7 +203,6 @@ function pkgSave(){
         genCommand
         genPkgList
     done
-
 }
 
 function main(){
