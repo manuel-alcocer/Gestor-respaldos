@@ -150,7 +150,6 @@ function mainRsync(){
     while IFS= read -r linea; do
         if [[ ! ${linea} =~ ^[[:space:]]*#.* ]]; then
             objectType=$(cut -d':' -f1 <<< ${linea})
-            #unset storSecurity
             storSecurity=$(cut -d':' -f2 <<< ${linea})
             setRsyncOptions ${1}${objectType^^}${storSecurity} ${linea}
             if [[ ${storSecurity^^} == 'C' ]]; then
@@ -160,38 +159,11 @@ function mainRsync(){
     done < $HOSTFILENAME
 }
 
-function diffDates(){
-    origin=${1##*/}
-    target=${2##*/}
-    originY=$(cut -d'-' -f1 <<< ${origin})
-    targetY=$(cut -d'-' -f1 <<< ${origin})
-    weeksOffset=$(((originY-targetY)*52))
-    originW=$(cut -d'-' -f2 <<< ${origin})
-    targetW=$(cut -d'-' -f2 <<< ${origin})
-    weeksDiff=$((originW + weeksOffset - targetW))
-    printf "${weeksDiff}\n"
-}
-
-function removeBackups(){
-    currentBackupDIR=${BACKUPDIR}
-    currentObject=${currentBackupDIR##*/}
-    currentParentPath=${BACKUPDIR%/*}
-    printf "${currentBackupDIR}\n"
-    printf "${currentParentPath}\n"
-    for backupDir in ${currentParentPath}/*; do
-        weeks=$(diffDates ${currentBackupDIR} ${backupDir})
-        :
-    done
-}
-
 function checkArgs(){
     for argument in ${ARGUMENTS}; do
         case ${argument} in
             '--secondary-stor')
                 uploadBackupDir ${ALIASHOST} ${BACKUPDIR} ${1}
-                ;;
-            '--remove')
-                removeBackups ${ALIASHOST} ${BACKUPDIR} ${1}
                 ;;
         esac
     done
