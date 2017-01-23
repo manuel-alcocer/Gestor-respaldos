@@ -277,7 +277,7 @@ function cleanIncr(){
     for backUPDir in *; do
         diffTime=$((ARGUMENTS - backUPDir))
         if [[ $diffTime > $INCRTIME ]]; then
-            rm -rf backUPDir
+            rm -rf $backUPDir
         fi
         printf "ARG: $ARGUMENTS\n"
         printf "backUPDir: ${backUPDir}\n"
