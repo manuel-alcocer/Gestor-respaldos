@@ -16,7 +16,7 @@ POSTMASTER='manuel@alcocer.net'
 
 BACKUPTYPE=$1
 LASTOPT=${@: -1}
-ARGUMENTS="${@:2}"
+ARGUMENTS=$2
 
 EXCLUDE=()
 
@@ -182,13 +182,9 @@ function mainRsync(){
 }
 
 function checkArgs(){
-    for argument in ${ARGUMENTS}; do
-        case ${argument} in
-            '--secondary-stor')
-                uploadBackupDir ${ALIASHOST} ${BACKUPDIR} ${1}
-                ;;
-        esac
-    done
+    if [[ ${ARGUMENTS} == '--secondary-stor' ]]; then
+        uploadBackupDir ${ALIASHOST} ${BACKUPDIR} ${1}
+    fi
 }
 
 function sendError(){
@@ -273,7 +269,7 @@ function calcSecs(){
 function cleanIncr(){
     fullPath="${BASE_STOR}/${ALIASHOST}/incrSync"
     INCRTIME=$(calcSecs $INCRTIME)
-    actualDir=${ARGUMENTS[0]}
+    actualDir=${ARGUMENTS}
     for backUPDir in *; do
         compDir=${backUPDir##*/}
         diffTime=$((actualDir - compDir))
