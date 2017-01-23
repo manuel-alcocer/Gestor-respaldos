@@ -92,7 +92,7 @@ function setVars(){
     HOSTFILENAME="${REMOTE_HOSTS_DIR}/${ALIASHOST}"
     REMOTEUSERNAME=$(cut -d':' -f2 <<< $1)
     HOSTIP=$(cut -d':' -f3 <<< $1)
-    OSDISTRO=$(cut -d:':' -f6 <<< $1)
+    OSDISTRO=$(cut -d':' -f6 <<< $1)
     if [[ $3 == 'full' ]]; then
         TARGETDIR="${BASE_STOR}/${ALIASHOST}/fullSync/${2}"
         BACKUPDIR="${TARGETDIR}"
