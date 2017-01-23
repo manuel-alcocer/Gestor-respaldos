@@ -10,6 +10,8 @@ OPENSSL_PUBKEY="${BACKUPMGR_CONFIG_DIR}${OPENSSL_PUBKEY:-/backupmgr.pubkey.pem}"
 
 PKGLISTNAME='listado-paquetes.list.txt'
 
+POSTMASTER='manuel@alcocer.net'
+
 BACKUPTYPE=$1
 LASTOPT=${@: -1}
 ARGUMENTS="${@:2}"
@@ -25,6 +27,10 @@ TARGETDIR=''
 OSDISTRO=''
 FULLTIME=''
 INCRTIME=''
+
+BACKUPNAME=''
+
+NUMERRORS=0
 
 function exitWithErr(){
     printf 'Hubieron errores...Saliendo\n'
@@ -71,11 +77,12 @@ function rsyncToSecondaryNow(){
     secRemHost=$(cut -d':' -f3 <<< $1)
     secRemDir="$(cut -d':' -f4 <<< $1)/${2}/${3}"
     rsync $4 ${secRemUser}@${secRemHost}:${secRemDir}
+    [[ $? != 0 ]] && ((NUMERRORS++))
 }
 
 function uploadBackupDir(){
     temporaryTar=/tmp/${2##*/}-${1}-${3}.tar.gz
-    tar czf ${temporaryTar} ${2}
+    tar czf ${temporaryTar} ${2} &>/dev/null
     while IFS= read -r linea; do
         rsyncToSecondaryNow ${linea} $1 $3 ${temporaryTar}
     done < ${SECONDARY_HOSTS_FILE}
@@ -118,6 +125,7 @@ function rsyncNow(){
         TARGETDIR=$BACKUPDIR
     fi
     rsync ${rsyncOPTS} ${BCKPOBJ} ${TARGETDIR}
+    [[ $? != 0 ]] && ((NUMERRORS++))
 }
 
 function setRsyncOptions(){
@@ -173,6 +181,10 @@ function checkArgs(){
     done
 }
 
+function sendMail(){
+    printf "Error haciendo la copia $2" | mail "Error: $2" $POSTMASTER
+}
+
 function makeBackup(){
     getRemoteHost
     currentDate=$(date +%s)
@@ -181,6 +193,13 @@ function makeBackup(){
         mainRsync $1
         checkArgs $1
     done
+    if [[ ${NUMERRORS} == 0 ]]; then
+        MSG="OK:$currentDate\n"
+    else
+        MSG="ERROR:$currentDate\n"
+        sendMail $POSTMASTER $currentDate
+    fi
+    printf "$MSG" > ${BACKUPMGR_CONFIG_DIR}/last-backup.log
 }
 
 function genPkgList(){
@@ -235,7 +254,7 @@ function cleanIncr(){
     for backUPDir in *; do
         diffTime=$((ARGUMENTS - backUPDir))
         if [[ $diffTime > INCRTIME ]]; then
-            :
+            rm -rf backUPDir
         fi
         printf "ARG: $ARGUMENTS\n"
         printf "backUPDir: ${backUPDir}\n"
