@@ -8,6 +8,8 @@ REMOTE_HOSTS_DIR="${BACKUPMGR_CONFIG_DIR}${REMOTE_HOSTS_DIR:-/hosts.list.d}"
 SECONDARY_HOSTS_FILE="${BACKUPMGR_CONFIG_DIR}${SECONDARY_HOSTS_FILE:-/secondary_hosts.list}"
 OPENSSL_PUBKEY="${BACKUPMGR_CONFIG_DIR}${OPENSSL_PUBKEY:-/backupmgr.pubkey.pem}"
 
+PKGLISTNAME='listado-paquetes.list.txt'
+
 BACKUPTYPE=$1
 LASTOPT=${@: -1}
 ARGUMENTS="${@:2}"
@@ -90,8 +92,7 @@ function setVars(){
     HOSTFILENAME="${REMOTE_HOSTS_DIR}/${ALIASHOST}"
     REMOTEUSERNAME=$(cut -d':' -f2 <<< $1)
     HOSTIP=$(cut -d':' -f3 <<< $1)
-    FULLWEEKS=$(cut -d':' -f4 <<< $1)
-    INCRWEEKS=$(cut -d':' -f4 <<< $1)
+    OSDISTRO=$(cut -d:':' -f6 <<< $1)
     if [[ $3 == 'full' ]]; then
         TARGETDIR="${BASE_STOR}/${ALIASHOST}/fullSync/${2}"
         BACKUPDIR="${TARGETDIR}"
@@ -179,6 +180,32 @@ function makeBackup(){
     done
 }
 
+function genPackages(){
+    case ${OSDISTRO,,} in
+        debian|ubuntu)
+            PKGCMD='dpkg --get-selections'
+            ;;
+        centos)
+            PKGCMD='yum list installed'
+            ;;
+    esac
+}
+
+function genPkgList(){
+    ssh ${REMOTEUSERNAME}@${HOSTIP} "$PKGCMD > $PKGLISTNAME"
+}
+
+function pkgSave(){
+    getRemoteHost
+    currentDate=$(date +%y-%U-%m%d-%H%M)
+    for remoteHost in "${REMOTE_HOSTS[@]}"; do
+        setVars "${remoteHost}" "${currentDate}" $1
+        genCommand
+        genPkgList
+    done
+
+}
+
 function main(){
     checkConfig
     case ${BACKUPTYPE,,} in
@@ -187,6 +214,9 @@ function main(){
             ;;
         incr)
             makeBackup incr
+            ;;
+        pkgsave)
+            pkgSave
             ;;
         *)
             printf 'Error en el comando\n'

@@ -1,2 +1,3 @@
-lisa:root:lisa.alcocer.gonzalonazareno.org:52:4
-barney:root:localhost:52:4
+lisa:root:lisa.alcocer.gonzalonazareno.org:52:4:centos
+barney:root:localhost:52:4:debian
+homer:root:homer.alcocer.gonzalonazareno.org:52:4:ubuntu
