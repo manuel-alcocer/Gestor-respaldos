@@ -22,6 +22,7 @@ REMOTEUSERNAME=''
 HOSTIP=''
 BACKUPDIR=''
 TARGETDIR=''
+OSDISTRO=''
 FULLWEEKS=''
 INCRWEEKS=''
 
@@ -92,6 +93,8 @@ function setVars(){
     HOSTFILENAME="${REMOTE_HOSTS_DIR}/${ALIASHOST}"
     REMOTEUSERNAME=$(cut -d':' -f2 <<< $1)
     HOSTIP=$(cut -d':' -f3 <<< $1)
+    FULLWEEKS=$(cut -d':' -f4 <<< $1)
+    INCRWEEKS=$(cut -d':' -f5 <<< $1)
     OSDISTRO=$(cut -d':' -f6 <<< $1)
     if [[ $3 == 'full' ]]; then
         TARGETDIR="${BASE_STOR}/${ALIASHOST}/fullSync/${2}"
@@ -172,7 +175,8 @@ function checkArgs(){
 
 function makeBackup(){
     getRemoteHost
-    currentDate=$(date +%y-%U-%m%d-%H%M)
+    #currentDate=$(date +%y-%U-%m%d-%H%M)
+    currentDate=$(date +%s)
     for remoteHost in "${REMOTE_HOSTS[@]}"; do
         setVars "${remoteHost}" "${currentDate}" $1
         mainRsync $1
@@ -197,8 +201,21 @@ function pkgSave(){
     getRemoteHost
     currentDate=$(date +%y-%U-%m%d-%H%M)
     for remoteHost in "${REMOTE_HOSTS[@]}"; do
-        setVars "${remoteHost}" "${currentDate}" $1
+        setVars "${remoteHost}" "${currentDate}"
         genPkgList
+    done
+}
+
+function cleanIncr(){
+
+}
+
+function cleanUp(){
+    getRemoteHost
+    currentDate=$(date +%y-%U-%m%d-%H%M)
+    for remoteHost in "${REMOTE_HOSTS[@]}"; do
+        setVars "${remoteHost}" "${currentDate}"
+        cleanIncr
     done
 }
 
@@ -213,6 +230,9 @@ function main(){
             ;;
         pkgsave)
             pkgSave
+            ;;
+        cleanup)
+            cleanUp
             ;;
         *)
             printf 'Error en el comando\n'
