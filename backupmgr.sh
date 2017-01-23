@@ -273,7 +273,7 @@ function calcSecs(){
 function cleanIncr(){
     fullPath="${BASE_STOR}/${ALIASHOST}/incrSync"
     INCRTIME=$(calcSecs $INCRTIME)
-    actualDir=${ARGUMENTS}
+    actualDir=${ARGUMENTS[0]}
     for backUPDir in *; do
         compDir=${backUPDir##*/}
         diffTime=$((actualDir - compDir))
