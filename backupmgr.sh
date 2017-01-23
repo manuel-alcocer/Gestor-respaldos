@@ -269,8 +269,8 @@ function calcSecs(){
 function cleanSecondaryNow(){
     secRemUser=$(cut -d':' -f2 <<< $1)
     secRemHost=$(cut -d':' -f3 <<< $1)
-    secRemDir="$(cut -d':' -f4 <<< $1)/${2}/${3}"
-    secFullPath="${secRemDir}/${4}-${2}-${3}.tar.gz"
+    secRemDir="$(cut -d':' -f4 <<< $1)/${2}/${3%Sync}"
+    secFullPath="${secRemDir}/${4}-${2}-${3%Sync}.tar.gz"
     ssh ${secRemUser}@${secRemHost} "rm ${secFullPath}"
 }
 
