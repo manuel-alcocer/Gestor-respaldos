@@ -23,8 +23,8 @@ HOSTIP=''
 BACKUPDIR=''
 TARGETDIR=''
 OSDISTRO=''
-FULLWEEKS=''
-INCRWEEKS=''
+FULLTIME=''
+INCRTIME=''
 
 function exitWithErr(){
     printf 'Hubieron errores...Saliendo\n'
@@ -93,8 +93,8 @@ function setVars(){
     HOSTFILENAME="${REMOTE_HOSTS_DIR}/${ALIASHOST}"
     REMOTEUSERNAME=$(cut -d':' -f2 <<< $1)
     HOSTIP=$(cut -d':' -f3 <<< $1)
-    FULLWEEKS=$(cut -d':' -f4 <<< $1)
-    INCRWEEKS=$(cut -d':' -f5 <<< $1)
+    FULLTIME=$(cut -d':' -f4 <<< $1)
+    INCRTIME=$(cut -d':' -f5 <<< $1)
     OSDISTRO=$(cut -d':' -f6 <<< $1)
     if [[ $3 == 'full' ]]; then
         TARGETDIR="${BASE_STOR}/${ALIASHOST}/fullSync/${2}"
@@ -175,7 +175,6 @@ function checkArgs(){
 
 function makeBackup(){
     getRemoteHost
-    #currentDate=$(date +%y-%U-%m%d-%H%M)
     currentDate=$(date +%s)
     for remoteHost in "${REMOTE_HOSTS[@]}"; do
         setVars "${remoteHost}" "${currentDate}" $1
@@ -199,23 +198,53 @@ function genPkgList(){
 
 function pkgSave(){
     getRemoteHost
-    currentDate=$(date +%y-%U-%m%d-%H%M)
+    currentDate=$(date +%s)
     for remoteHost in "${REMOTE_HOSTS[@]}"; do
         setVars "${remoteHost}" "${currentDate}"
         genPkgList
     done
 }
 
+function calcSecs(){
+    case $1 in
+        *y)
+            LIMITTIME=${1%y}
+            daysOfYear=$(date -d "$(date +%Y)-12-31" +%j)
+            LIMITTIME=$(( LIMITTIME * ${daysOfYear} * 24 * 3600 ))
+            ;;
+        *m)
+            LIMITTIME=${1%m}
+            LIMITTIME=$(( LIMITTIME * 30 * 24 * 3600 ))
+            ;;
+        *d)
+            LIMITTIME=${1%d}
+            LIMITTIME=$(( LIMITTIME * 24 * 3600 ))
+            ;;
+    esac
+    printf "$LIMITTIME\n"
+}
+
 function cleanIncr(){
-    :
+    fullPath="${BASE_STOR}/${ALIASHOST}/incrSync"
+    cd $fullPath
+    INCRTIME=$(calcSecs $INCRTIME)
+    for backUPDir in *; do
+        :
+    done
+    print "${INCRTIME}\n"
 }
 
 function cleanUp(){
     getRemoteHost
-    currentDate=$(date +%y-%U-%m%d-%H%M)
+    currentDate=$(date +%s)
     for remoteHost in "${REMOTE_HOSTS[@]}"; do
         setVars "${remoteHost}" "${currentDate}"
-        cleanIncr
+        genSecs
+        if [[ $1 == 'incr' ]]; then
+            cleanIncr
+        elif [[ $1 == 'full' ]]; then
+            cleanFull
+        fi
     done
 }
 
@@ -231,8 +260,11 @@ function main(){
         pkgsave)
             pkgSave
             ;;
-        cleanup)
-            cleanUp
+        cleanincr)
+            cleanUp incr
+            ;;
+        cleanfull)
+            cleanUp full
             ;;
         *)
             printf 'Error en el comando\n'
