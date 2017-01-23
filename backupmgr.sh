@@ -199,7 +199,7 @@ function makeBackup(){
         MSG="ERROR:$currentDate\n"
         sendMail $POSTMASTER $currentDate
     fi
-    printf "$MSG\n" > ${BACKUPMGR_CONFIG_DIR}/last-backup.log
+    printf "$MSG" > "${BACKUPMGR_CONFIG_DIR}/last-backup.log"
 }
 
 function genPkgList(){
