@@ -239,7 +239,6 @@ function cleanUp(){
     currentDate=$(date +%s)
     for remoteHost in "${REMOTE_HOSTS[@]}"; do
         setVars "${remoteHost}" "${currentDate}"
-        genSecs
         if [[ $1 == 'incr' ]]; then
             cleanIncr
         elif [[ $1 == 'full' ]]; then
