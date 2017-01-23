@@ -3,6 +3,7 @@
 REMOTE_HOSTS=()
 BASE_STOR=${BASE_STOR:-/BackUps}
 BACKUPMGR_CONFIG_DIR=${BACKUPMGR_CONFIG_DIR:-/etc/backupMgr}
+MAILLIST=${BACKUPMGR_CONFIG_DIR}${MAILFILE:-/mail.list}
 REMOTE_HOSTS_FILE="${BACKUPMGR_CONFIG_DIR}${REMOTE_HOSTS_FILE:-/hosts.list}"
 REMOTE_HOSTS_DIR="${BACKUPMGR_CONFIG_DIR}${REMOTE_HOSTS_DIR:-/hosts.list.d}"
 SECONDARY_HOSTS_FILE="${BACKUPMGR_CONFIG_DIR}${SECONDARY_HOSTS_FILE:-/secondary_hosts.list}"
@@ -183,7 +184,9 @@ function checkArgs(){
 }
 
 function sendError(){
-    mail -s "Error: $1" $POSTMASTER < ${LOGFILE}
+    while IFS= read linea; do
+        mail -s "Error: $1" $linea < ${LOGFILE}
+    done < ${MAILLIST}
 }
 
 function makeBackup(){
