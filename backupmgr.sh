@@ -287,7 +287,7 @@ function cleanDirNow(){
     for backUPDir in ${fullPath}/*; do
         compDir=${backUPDir##*/}
         diffTime=$((actualDir - compDir))
-        if [[ $diffTime > $COMPTIME ]]; then
+        if [[ $diffTime -gt $COMPTIME ]]; then
             rm -rf $backUPDir
             if [[ $CLEANARG == '--secondary-stor' ]]; then
                 cleanSecondary $compDir ${ALIASHOST} $1
