@@ -239,7 +239,7 @@ function cleanIncr(){
         fi
         printf "ARG: $ARGUMENTS\n"
         printf "backUPDir: ${backUPDir}\n"
-        printf "diff: ${diffTime}"
+        printf "diff: ${diffTime}\n"
     done
     print "${INCRTIME}\n"
 }
