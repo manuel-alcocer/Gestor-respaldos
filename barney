@@ -1,2 +1,8 @@
-F:NC:/etc/fstab
-D:NC:/var/cache/bind:E:managed-keys.*
+D:NC:/etc/bind
+D:NC:/var/cache/bind
+D:NC:/etc/ldap
+D:NC:/var/lib/ldap
+D:NC:/etc/backupMgr
+D:C:/root
+D:NC:/root/listado-paquetes.list.txt
+D:C:/home/debian

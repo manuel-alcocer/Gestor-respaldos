@@ -1,1 +1,6 @@
-F:NC:/etc/fstab
+D:NC:/etc/httpd
+D:NC:/var/www
+D:NC:/srv/www
+D:C:/home/centos
+D:C:/root
+D:NC:/root/listado-paquetes.list.txt
